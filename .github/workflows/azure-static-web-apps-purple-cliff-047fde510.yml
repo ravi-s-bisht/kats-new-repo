@@ -31,6 +31,10 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
           CI: false
+          NEXT_PUBLIC_BASE_URL: "/api"
+          DAILY_BOTS_URL=https: "//api.daily.co/v1/bots/start"
+          NEXT_PUBLIC_ELEVENLABS_API_KEY: "sk_fd2fef69c65db8fedd846d97a3422ee4d2bd679dbf3560b3"
+          DAILY_BOTS_API_KEY: "92e708e415167c293d27ec44eb844a047bded8ebe9e5f38681d81d0e1e2ddd2c"
           NEXT_PUBLIC_API_URL: "https://avatarx-server-staging.blueforest-1fbd7736.southindia.azurecontainerapps.io/api"
           NEXT_PUBLIC_SOCKET_URL: "https://avatarx-server-staging.blueforest-1fbd7736.southindia.azurecontainerapps.io"
           NEXT_PUBLIC_GOOGLE_LOGIN_API_KEY: "118420081966-s1n42272jcg4r5l4erufahti23ubp8o0.apps.googleusercontent.com"
