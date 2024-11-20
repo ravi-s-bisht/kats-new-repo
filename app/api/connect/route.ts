@@ -9,6 +9,7 @@ export async function POST(request: Request) {
   const { services, config, rtvi_client_version } = await request.json();
 
   if (!services || !config || !process.env.DAILY_BOTS_URL) {
+    console.log('first', services, config, process.env.DAILY_BOTS_URL);
     return new Response(`Services or config not found on request body`, {
       status: 400,
     });
