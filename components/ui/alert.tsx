@@ -4,7 +4,7 @@ import { CircleAlert } from "lucide-react";
 
 import { cn } from "@/utils/tailwind";
 
-const alertVariants = cva("text-left border border-black rounded-lg p-4", {
+const alertVariants = cva("text-center border border-black rounded-lg p-4", {
   variants: {
     intent: {
       info: "alert-info",
