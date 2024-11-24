@@ -300,7 +300,7 @@ const UserTable: React.FC<UserTableProps> = ({
               type="tel"
               id="outlined-required"
               label="Phone Number"
-              placeholder="Phone Number"
+              placeholder="+123456789"
               value={newUserPhone}
               onChange={(e) => setNewUserPhone(e.target.value)}
               size="small"
