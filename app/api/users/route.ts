@@ -3,6 +3,7 @@ import db from "../db/connection";
 import moment from "moment";
 
 export async function GET(req: Request) {
+  console.log('req: ', req);
   try {
     const id = new URL(req.url).searchParams.get("id");
 
@@ -61,6 +62,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(users, { status: 200 });
   } catch (error) {
+    console.log('ERRORRRR: ', error);
     return NextResponse.json(
       { message: "Failed to fetch user(s)" },
       { status: 500 }
