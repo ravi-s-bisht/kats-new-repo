@@ -1,15 +1,18 @@
-import 'react-time-picker/dist/TimePicker.css';
-import 'react-clock/dist/Clock.css';
+import "react-time-picker/dist/TimePicker.css";
+import "react-clock/dist/Clock.css";
 
-import React, { useState } from 'react';
-import TimePicker from 'react-time-picker';
+import React, { useState, useEffect } from "react";
+import { TimePicker } from "@mui/x-date-pickers";
+import { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 
-interface Medication {
-  name: string;
-  time: string;
+export interface Medication {
+  id?: number;
+  medication_name: string;
+  reminder_time: string;
 }
 
-interface User {
+export interface User {
   id: string;
   name: string;
   phoneNumber: string;
@@ -20,43 +23,134 @@ interface UserTableProps {
   users: User[];
   onAddMedication: (userId: string, medication: Medication) => void;
   onDeleteMedication: (userId: string, medicationIndex: number) => void;
-  onAddUser: (user: Omit<User, 'id' | 'medications'>) => void;
+  onAddUser: (user: Omit<User, "id" | "medications">) => void;
+  onUpdateUsers: () => void;
 }
 
 const UserTable: React.FC<UserTableProps> = ({
   users,
   onAddMedication,
   onDeleteMedication,
-  onAddUser,
+  onUpdateUsers,
 }) => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [showAddMedicationModal, setShowAddMedicationModal] = useState<boolean>(false);
+  const [showAddMedicationModal, setShowAddMedicationModal] =
+    useState<boolean>(false);
   const [showAddUserModal, setShowAddUserModal] = useState<boolean>(false);
-  const [medicationName, setMedicationName] = useState<string>('');
-  const [medicationTime, setMedicationTime] = useState<string>('10:00');
-  const [newUserName, setNewUserName] = useState<string>('');
-  const [newUserPhone, setNewUserPhone] = useState<string>('');
+  const [medicationName, setMedicationName] = useState<string>("");
+  const [medicationTime, setMedicationTime] = useState<Dayjs>(dayjs());
+  const [newUserName, setNewUserName] = useState<string>("");
+  const [newUserPhone, setNewUserPhone] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch users on component mount
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/users");
+      if (!response.ok) throw new Error("Failed to fetch users");
+      const data = await response.json();
+      // Update users through parent component
+      // You'll need to add this prop to UserTableProps and handle it in the parent
+      onUpdateUsers();
+    } catch (err) {
+      setError("Failed to fetch users");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const openAddMedicationModal = (user: User) => {
+    console.log("my userrrr: ", user);
     setSelectedUser(user);
     setShowAddMedicationModal(true);
   };
 
   const handleAddMedication = () => {
     if (selectedUser && medicationName) {
-      onAddMedication(selectedUser.id, { name: medicationName, time: medicationTime });
-      setMedicationName('');
-      setMedicationTime('10:00');
+      onAddMedication(selectedUser.id, {
+        medication_name: medicationName,
+        reminder_time: medicationTime.toISOString().slice(11, 19),
+      });
+      setMedicationName("");
+      setMedicationTime(dayjs());
       setShowAddMedicationModal(false);
+      setSelectedUser(null);
     }
   };
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (newUserName && newUserPhone) {
-      onAddUser({ name: newUserName, phoneNumber: newUserPhone });
-      setNewUserName('');
-      setNewUserPhone('');
-      setShowAddUserModal(false);
+      try {
+        const response = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            first_name: newUserName,
+            phone_number: newUserPhone,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to add user");
+        }
+
+        fetchUsers();
+
+        setNewUserName("");
+        setNewUserPhone("");
+        setShowAddUserModal(false);
+      } catch (err: any) {
+        setError(err.message);
+        console.error(err);
+      }
+    }
+  };
+
+  const handleDeleteMedication = async (
+    userId: string,
+    medication_id: number
+  ) => {
+    try {
+      const response = await fetch(`/api/medications`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: medication_id,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to delete medication");
+
+      setSelectedUser(null);
+
+      onDeleteMedication(userId, medication_id);
+    } catch (err) {
+      setError("Failed to delete medication");
+      console.error(err);
+    }
+  };
+
+  const handleUserDelete = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users?id=${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete user');
+
+      // Refresh the users list
+      await fetchUsers();
+    } catch (err) {
+      setError('Failed to delete user');
+      console.error(err);
     }
   };
 
@@ -78,7 +172,9 @@ const UserTable: React.FC<UserTableProps> = ({
           <div className="bg-white rounded-lg shadow-lg w-[400px] p-6">
             <h2 className="text-2xl font-bold mb-4">Add User</h2>
             <div className="mb-4">
-              <label className="block text-sm text-left font-medium text-gray-700">Name</label>
+              <label className="block text-sm text-left font-medium text-gray-700">
+                Name
+              </label>
               <input
                 type="text"
                 value={newUserName}
@@ -87,7 +183,9 @@ const UserTable: React.FC<UserTableProps> = ({
               />
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-left text-gray-700">Phone Number</label>
+              <label className="block text-sm font-medium text-left text-gray-700">
+                Phone Number
+              </label>
               <input
                 type="text"
                 value={newUserPhone}
@@ -117,9 +215,15 @@ const UserTable: React.FC<UserTableProps> = ({
         <table className="min-w-full bg-white rounded-lg shadow-lg">
           <thead className="bg-gray-200">
             <tr>
-              <th className="text-center px-6 py-3 font-medium text-gray-700">Name</th>
-              <th className="text-center px-6 py-3 font-medium text-gray-700">Phone No.</th>
-              <th className="text-left px-6 py-3 font-medium text-gray-700">Actions</th>
+              <th className="text-center px-6 py-3 font-medium text-gray-700">
+                Name
+              </th>
+              <th className="text-center px-6 py-3 font-medium text-gray-700">
+                Phone No.
+              </th>
+              <th className="text-left px-6 py-3 font-medium text-gray-700">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -141,6 +245,12 @@ const UserTable: React.FC<UserTableProps> = ({
                     >
                       Show Medications
                     </button>
+                    <button
+                      className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
+                      onClick={() => handleUserDelete(user.id)}
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))
@@ -160,7 +270,9 @@ const UserTable: React.FC<UserTableProps> = ({
             <div className="bg-white rounded-lg shadow-lg w-[400px] p-6">
               <h2 className="text-2xl font-bold mb-4">Add Medication</h2>
               <div className="mb-4">
-                <label className="block text-sm text-left font-medium text-gray-700">Medication Name</label>
+                <label className="block text-sm text-left font-medium text-gray-700">
+                  Medication Name
+                </label>
                 <input
                   type="text"
                   value={medicationName}
@@ -169,11 +281,14 @@ const UserTable: React.FC<UserTableProps> = ({
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm text-left font-medium text-gray-700">Time</label>
+                <label className="block text-sm text-left font-medium text-gray-700">
+                  Time
+                </label>
                 <TimePicker
                   value={medicationTime}
-                  onChange={(value) => setMedicationTime(value || '10:00')}
-                  className="mt-1 block w-full px-4 py-2 border rounded-md shadow-sm"
+                  onChange={(newValue) =>
+                    setMedicationTime(newValue || dayjs())
+                  }
                 />
               </div>
               <div className="flex justify-end gap-4">
@@ -219,12 +334,21 @@ const UserTable: React.FC<UserTableProps> = ({
                   <tbody>
                     {selectedUser.medications.map((medication, index) => (
                       <tr key={index} className="border-t">
-                        <td className="px-4 py-2">{medication.name}</td>
-                        <td className="px-4 py-2">{medication.time}</td>
+                        <td className="px-4 py-2">
+                          {medication.medication_name}
+                        </td>
+                        <td className="px-4 py-2">
+                          {medication.reminder_time}
+                        </td>
                         <td className="px-4 py-2">
                           <button
                             className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
-                            onClick={() => onDeleteMedication(selectedUser.id, index)}
+                            onClick={() =>
+                              handleDeleteMedication(
+                                selectedUser.id,
+                                Number(medication.id)
+                              )
+                            }
                           >
                             Delete
                           </button>
@@ -234,7 +358,9 @@ const UserTable: React.FC<UserTableProps> = ({
                   </tbody>
                 </table>
               ) : (
-                <p className="text-gray-500 text-center py-4">No medications added.</p>
+                <p className="text-gray-500 text-center py-4">
+                  No medications added.
+                </p>
               )}
               <div className="flex justify-end gap-4">
                 <button

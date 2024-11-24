@@ -29,8 +29,6 @@ export async function POST(request: Request) {
     rtvi_client_version,
   };
 
-  console.log('the payload: ', payload)
-
   const req = await fetch(process.env.DAILY_BOTS_URL, {
     method: "POST",
     headers: {

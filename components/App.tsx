@@ -133,6 +133,7 @@ export default function App({ setShowSplash } : { setShowSplash: Dispatch<SetSta
   const isReady = appState === "ready";
 
   return (
+    
     <Card.Card shadow className="animate-appear max-w-lg">
       <Card.CardHeader>
         <Card.CardTitle>Configuration</Card.CardTitle>

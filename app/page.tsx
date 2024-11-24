@@ -35,6 +35,14 @@ export default function Home() {
         },
       },
       timeout: BOT_READY_TIMEOUT,
+      callbacks: {
+        onUserTranscript(data) {
+          console.log("user: ", data);
+        },
+        onBotTranscript(data) {
+          console.log("bot response: ", data);
+        },
+      },
     });
 
     const llmHelper = new LLMHelper({});
