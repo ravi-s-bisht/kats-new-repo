@@ -24,6 +24,8 @@ export async function GET(req: Request) {
       query.where("users.id", id); // Filter by user ID if provided
     }
 
+    console.log('before query: ', query);
+
     const results = await query;
 
     console.log('after query: ', results);
