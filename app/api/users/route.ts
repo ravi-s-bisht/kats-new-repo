@@ -4,9 +4,10 @@ import moment from "moment";
 
 export async function GET(req: Request) {
   console.log('process: ', process.env.MYSQL_HOST);
-  console.log('req: ', req);
   try {
     const id = new URL(req.url).searchParams.get("id");
+
+    console.log('after params: ', id);
 
     // If no id is provided, fetch all users
     const query = db("users")
@@ -24,6 +25,8 @@ export async function GET(req: Request) {
     }
 
     const results = await query;
+
+    console.log('after query: ', results);
 
     // Group the medications into an array for each user
     const users = results.reduce((acc, row) => {
@@ -60,6 +63,8 @@ export async function GET(req: Request) {
         user.medications = [];
       }
     });
+
+    console.log('after grouping: ', users);
 
     return NextResponse.json(users, { status: 200 });
   } catch (error) {
