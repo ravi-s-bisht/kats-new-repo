@@ -3,7 +3,7 @@ import db from "../db/connection";
 import moment from "moment";
 
 export async function GET(req: Request) {
-  console.log('process: ', process.env.MYSQL_HOST);
+  console.log('process: ', process.env.MYSQL_HOST, process.env.MYSQL_USER, process.env.MYSQL_PASSWORD);
   try {
     const id = new URL(req.url).searchParams.get("id");
 
