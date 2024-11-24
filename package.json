@@ -13,6 +13,8 @@
     "@daily-co/realtime-ai-daily": "0.2.0",
     "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.5",
+    "@mui/icons-material": "^6.1.8",
+    "@mui/lab": "^6.0.0-beta.16",
     "@mui/material": "^6.1.8",
     "@mui/x-date-pickers": "^7.22.3",
     "@radix-ui/react-accordion": "^1.2.0",

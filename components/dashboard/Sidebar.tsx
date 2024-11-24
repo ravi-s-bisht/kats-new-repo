@@ -1,14 +1,18 @@
-import Link from 'next/link';
+import Link from "next/link";
+import PersonIcon from "@mui/icons-material/Person";
+import Person from "@mui/icons-material/Person";
 
 const Sidebar: React.FC = () => {
   return (
-    <div className="w-64 h-screen bg-gray-800 text-white py-4">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+    <div className="w-64 h-screen bg-white text-white py-4 px-4 border-r border-gray-200">
       <nav>
         <ul>
-          <li className="mb-4 bg-green-200 px-2 py-3">
+          <li className="mb-4 bg-gray-100 px-3 py-3 rounded-md">
             <Link href="/">
-              <span className="hover:text-gray-300 text-black font-semibold">Users</span>
+              <span className="text-blue-800 font-semibold items-center justify-start flex">
+                <PersonIcon className="mr-3" />
+                Users
+              </span>
             </Link>
           </li>
         </ul>
