@@ -39,6 +39,11 @@ jobs:
           NEXT_PUBLIC_SOCKET_URL: "https://avatarx-server-staging.blueforest-1fbd7736.southindia.azurecontainerapps.io"
           NEXT_PUBLIC_GOOGLE_LOGIN_API_KEY: "118420081966-s1n42272jcg4r5l4erufahti23ubp8o0.apps.googleusercontent.com"
           NODE_ENV: "staging"
+          MYSQL_HOST: "avatarx.mysql.database.azure.com"
+          MYSQL_USER: "soubhagya"
+          MYSQL_PASS: "Thinkonce@619"
+          MYSQL_PORT: 3306
+          MYSQL_DB_DEMO: "demo_db"
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PURPLE_CLIFF_047FDE510 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
