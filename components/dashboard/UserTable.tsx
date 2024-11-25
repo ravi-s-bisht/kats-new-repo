@@ -541,14 +541,7 @@ const UserTable: React.FC<UserTableProps> = ({
                           {medication.medication_name}
                         </td>
                         <td className="px-4 py-2">
-                          {dayjs
-                            .utc(
-                              `${dayjs().format("YYYY-MM-DD")}T${
-                                medication.reminder_time
-                              }Z`
-                            )
-                            .tz(userTimezone)
-                            .format("HH:mm")}
+                          {medication.reminder_time.slice(0, 5)} PST
                         </td>
                         <td className="px-4 py-2">
                           {/* <button
