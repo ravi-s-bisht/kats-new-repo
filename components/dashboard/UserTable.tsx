@@ -62,6 +62,7 @@ const UserTable: React.FC<UserTableProps> = ({
   const [newLastName, setNewLastName] = useState<string>("");
   const [newUserPhone, setNewUserPhone] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string>("");
 
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -112,7 +113,9 @@ const UserTable: React.FC<UserTableProps> = ({
           body: JSON.stringify({
             user_id: selectedUser.id,
             medication_name: medicationName,
-            reminder_time: medicationTime.toISOString().slice(11, 19),
+            reminder_time: medicationTime
+              .tz("America/Los_Angeles")
+              .format("HH:mm:00"),
           }),
         });
 
@@ -123,11 +126,13 @@ const UserTable: React.FC<UserTableProps> = ({
 
         onAddMedication(selectedUser.id, {
           medication_name: medicationName,
-          reminder_time: medicationTime.toISOString().slice(11, 19),
+          reminder_time: medicationTime
+            .tz("America/Los_Angeles")
+            .format("HH:mm:00"),
         });
 
         setMedicationName("");
-        setMedicationTime(dayjs());
+        setMedicationTime(dayjs().tz("America/Los_Angeles"));
         setShowAddMedicationModal(false);
         setSelectedUser(null);
       } catch (err: any) {
@@ -141,7 +146,27 @@ const UserTable: React.FC<UserTableProps> = ({
     }
   };
 
+  const validatePhoneNumber = (phone: string) => {
+    const phoneRegex = /^\+\d+$/; // Matches +[any number of digits]
+    return phoneRegex.test(phone);
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewUserPhone(value);
+
+    if (value && !validatePhoneNumber(value)) {
+      setPhoneError("Please follow this format: +12345678901");
+    } else {
+      setPhoneError("");
+    }
+  };
+
   const handleAddUser = async () => {
+    if (!validatePhoneNumber(newUserPhone)) {
+      setPhoneError("Please enter a valid phone number");
+      return;
+    }
     setIsLoading(true);
     if (newUserName && newUserPhone) {
       try {
@@ -222,7 +247,7 @@ const UserTable: React.FC<UserTableProps> = ({
 
   const onChangeMedicationTime = (newValue: any) => {
     console.log("selected time: ", newValue);
-    setMedicationTime(newValue || dayjs());
+    setMedicationTime(newValue || dayjs().tz("America/Los_Angeles"));
   };
 
   return (
@@ -300,9 +325,11 @@ const UserTable: React.FC<UserTableProps> = ({
               type="tel"
               id="outlined-required"
               label="Phone Number"
-              placeholder="+123456789"
+              placeholder="+12345678901"
               value={newUserPhone}
-              onChange={(e) => setNewUserPhone(e.target.value)}
+              onChange={handlePhoneChange}
+              error={!!phoneError}
+              helperText={phoneError}
               size="small"
               className="w-full"
             />
@@ -320,7 +347,12 @@ const UserTable: React.FC<UserTableProps> = ({
                 Add
               </button> */}
               <Button
-                onClick={() => setShowAddUserModal(false)}
+                onClick={() => {
+                  setNewUserName("");
+                  setNewLastName("");
+                  setNewUserPhone("");
+                  setShowAddUserModal(false);
+                }}
                 variant="contained"
                 color="inherit"
               >
@@ -330,6 +362,7 @@ const UserTable: React.FC<UserTableProps> = ({
                 variant="contained"
                 loading={isLoading}
                 onClick={handleAddUser}
+                disabled={!!phoneError}
               >
                 Add
               </LoadingButton>
@@ -440,6 +473,7 @@ const UserTable: React.FC<UserTableProps> = ({
                 className="w-full"
                 value={medicationTime}
                 onChange={(newValue) => onChangeMedicationTime(newValue)}
+                timezone="America/Los_Angeles"
               />
               <div className="flex justify-end gap-4 pt-4">
                 {/* <button
