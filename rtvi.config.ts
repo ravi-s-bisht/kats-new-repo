@@ -9,7 +9,7 @@ export const LANGUAGES = [
     value: "en",
     tts_model: "eleven_turbo_v2_5",
     stt_model: "nova-2-general",
-    default_voice: "MXGyTMlsvQgQ4BL0emIa",
+    default_voice: "I33geqnOHQGKDPUMUspQ",
   },
   {
     label: "Spanish",
@@ -94,7 +94,7 @@ export const defaultConfig = [
   {
     service: "tts",
     options: [
-      { name: "voice", value: "MXGyTMlsvQgQ4BL0emIa" },
+      { name: "voice", value: "I33geqnOHQGKDPUMUspQ" },
       { name: "model", value: LANGUAGES[0].tts_model },
       { name: "language", value: LANGUAGES[0].value },
       {
