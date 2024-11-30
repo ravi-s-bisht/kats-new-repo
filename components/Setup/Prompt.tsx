@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { LLMContextMessage } from "realtime-ai";
 import { useRTVIClient } from "realtime-ai-react";
 
-import { Button } from "../ui/button";
+import { Button } from "../ui/button_old";
 import * as Card from "../ui/card";
 import { Textarea } from "../ui/textarea";
 
@@ -19,7 +19,7 @@ const Prompt: React.FC<PromptProps> = ({
 }) => {
   const voiceClient = useRTVIClient()!;
   const [prompt, setPrompt] = useState<LLMContextMessage[] | undefined>(
-    undefined
+    undefined,
   );
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
 

@@ -12,7 +12,7 @@ export const AudioIndicatorBar: React.FC = () => {
     useCallback((volume: number) => {
       if (volRef.current)
         volRef.current.style.width = Math.max(2, volume * 100) + "%";
-    }, [])
+    }, []),
   );
 
   return (

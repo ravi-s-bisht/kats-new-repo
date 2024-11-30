@@ -201,7 +201,7 @@ const UserTable: React.FC<UserTableProps> = ({
 
   const handleDeleteMedication = async (
     userId: string,
-    medication_id: number
+    medication_id: number,
   ) => {
     setIsLoading(true);
     try {
@@ -562,7 +562,7 @@ const UserTable: React.FC<UserTableProps> = ({
                             onClick={() =>
                               handleDeleteMedication(
                                 selectedUser.id,
-                                Number(medication.id)
+                                Number(medication.id),
                               )
                             }
                             size="small"

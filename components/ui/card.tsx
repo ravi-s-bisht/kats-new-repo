@@ -15,11 +15,11 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
         "rounded-3xl border border-transparent bg-origin-border borderClip bg-cardBorder",
         shadow && "shadow-long",
         fullWidthMobile && "w-full max-w-full min-w-full md:min-w-0",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  ),
 );
 
 Card.displayName = "Card";
@@ -44,7 +44,7 @@ const CardTitle = React.forwardRef<
     ref={ref}
     className={cn(
       "text-2xl font-semibold leading-none tracking-tight text-pretty",
-      className
+      className,
     )}
     {...props}
   />
@@ -74,11 +74,11 @@ const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
       className={cn(
         "p-6 pt-0 lg:p-9 lg:pt-0",
         stack && "flex flex-col gap-3 lg:gap-4",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  ),
 );
 CardContent.displayName = "CardContent";
 
@@ -94,11 +94,11 @@ const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(
       className={cn(
         "flex justify-center items-center p-6 pt-0 lg:p-9 lg:pt-0",
         isButtonArray && "gap-2 flex-col md:flex-row *:w-full md:*:w-auto",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  ),
 );
 CardFooter.displayName = "CardFooter";
 

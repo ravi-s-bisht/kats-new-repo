@@ -11,7 +11,7 @@ const ModelBadge: React.FC = () => {
   const [model, setModel] = React.useState<string | undefined>(
     clientParams.config
       .find((c) => c.service === "llm")
-      ?.options.find((p) => p.name === "model")?.value as string
+      ?.options.find((p) => p.name === "model")?.value as string,
   );
 
   useRTVIClientEvent(
@@ -22,7 +22,7 @@ const ModelBadge: React.FC = () => {
         ?.options.find((p) => p.name === "model")?.value as string;
 
       setModel(m);
-    }
+    },
   );
 
   return <div className={styles.modelBadge}>{model}</div>;

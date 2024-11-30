@@ -27,7 +27,9 @@
   align-items: center;
   margin: 0 auto;
   z-index: 20;
-  transition: all 0.5s ease, opacity 2s ease;
+  transition:
+    all 0.5s ease,
+    opacity 2s ease;
   border: 6px solid
     color-mix(in srgb, theme(colors.primary.300), transparent 70%);
   outline: 6px solid

@@ -17,10 +17,16 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button_old";
 import { Field } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   defaultLLMPrompt,
   LANGUAGES,
@@ -190,21 +196,41 @@ export const ConfigSelect: React.FC<ConfigSelectProps> = ({
         />
       </dialog>
       <div className="flex flex-col flex-wrap gap-4">
-        <Field label="Language" error={false}>
+        <Field label="Language" error={false} className="w-full mb-5">
           <Select
-            onChange={(e) => {
-              composeConfig(character, parseInt(e.currentTarget.value));
-              setLanguage(parseInt(e.currentTarget.value));
+            onValueChange={(value) => {
+              const selectedValue = parseInt(value);
+              if (!isNaN(selectedValue)) {
+                composeConfig(character, selectedValue);
+                setLanguage(selectedValue);
+              } else {
+                console.error("Invalid language selection");
+              }
             }}
-            value={language}
-            icon={<Languages size={24} />}
+            value={language.toString()}
           >
-            {LANGUAGES.map((lang, i) => (
-              <option key={lang.label} value={i}>
-                {lang.label}
-              </option>
-            ))}
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Theme" />
+            </SelectTrigger>
+            <SelectContent className="w-full bg-white">
+              {LANGUAGES.map((lang, i) => (
+                <SelectItem key={lang.label} value={i.toString()}>
+                  {lang.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
+
+          {/* <Select>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Theme" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              <SelectItem value="light">Light</SelectItem>
+              <SelectItem value="dark">Dark</SelectItem>
+              <SelectItem value="system">System</SelectItem>
+            </SelectContent>
+          </Select> */}
         </Field>
         {/* <Accordion type="single" collapsible>
           {language === 0 && (

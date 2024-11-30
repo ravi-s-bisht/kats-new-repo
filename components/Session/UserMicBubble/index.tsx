@@ -16,7 +16,7 @@ const AudioIndicatorBubble: React.FC = () => {
         const v = Number(volume) * 1.75;
         volRef.current.style.transform = `scale(${Math.max(0.1, v)})`;
       }
-    }, [])
+    }, []),
   );
 
   return <div ref={volRef} className={styles.volume} />;
@@ -38,7 +38,7 @@ export default function UserMicBubble({
   const cx = clsx(
     muted && active && styles.muted,
     !active && styles.blocked,
-    canTalk && styles.canTalk
+    canTalk && styles.canTalk,
   );
 
   return (

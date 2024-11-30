@@ -26,22 +26,22 @@ export const Configure: React.FC<ConfigureProps> = React.memo(
       (newService: { [key: string]: string }) => {
         setClientParams({ services: newService });
       },
-      [setClientParams]
+      [setClientParams],
     );
 
     const handleConfigOptionUpdate = useCallback(
       async (newConfigOptions: RTVIClientConfigOption[]) => {
-        const newConfig = await voiceClient.setConfigOptions(
+        const newConfig = await voiceClient?.setConfigOptions(
           newConfigOptions,
-          clientParams.config
+          clientParams.config,
         );
         setClientParams({ config: newConfig });
       },
-      [voiceClient, clientParams.config, setClientParams]
+      [voiceClient, clientParams.config, setClientParams],
     );
 
     return (
-      <>
+      <div className="mt-5">
         <section className="flex flex-col flex-wrap gap-3 lg:gap-4">
           {/* <DeviceSelect hideMeter={false} /> */}
           <ConfigSelect
@@ -66,12 +66,12 @@ export const Configure: React.FC<ConfigureProps> = React.memo(
             </div>
           </section>
         )}
-      </>
+      </div>
     );
   },
   (prevProps, nextProps) =>
     prevProps.startAudioOff === nextProps.startAudioOff &&
-    prevProps.state === nextProps.state
+    prevProps.state === nextProps.state,
 );
 
 Configure.displayName = "Configure";

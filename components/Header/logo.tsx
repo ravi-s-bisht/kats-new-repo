@@ -5,7 +5,7 @@ type LogoProps = {
   className?: string;
 };
 
-const logoSrc = "/logo.png"
+const logoSrc = "/logo.png";
 
 export const Logo: React.FC<LogoProps> = ({ className }) => {
   return (

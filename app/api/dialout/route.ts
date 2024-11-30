@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       `dialout_data or phoneNumber not found on request body`,
       {
         status: 400,
-      }
+      },
     );
   }
 

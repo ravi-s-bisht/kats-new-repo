@@ -64,7 +64,7 @@ export const AppProvider: React.FC<
           : p.services,
       }));
     },
-    []
+    [],
   );
 
   return (

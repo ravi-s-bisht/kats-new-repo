@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import UserTable, { User } from "@/components/dashboard/UserTable";
 
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+
+import { useRouter } from "next/navigation";
+import { checkToken as apiCheckToken } from "@/src/api/api";
+import { LoggedInUserContext } from "@/src/contexts/LoggedInUserContext";
 
 interface Medication {
   id: number;
@@ -15,6 +19,29 @@ interface Medication {
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { loggedInUser, setLoggedInUser } = useContext(LoggedInUserContext);
+
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkToken = async () => {
+      try {
+        console.log("logged in user:", loggedInUser);
+        const response = await apiCheckToken();
+
+        console.log("check up on token", response, loggedInUser);
+
+        if (response.status !== 200) {
+          router.push("/login");
+        }
+      } catch (error) {
+        console.error("Error verifying token:", error);
+        router.push("/login");
+      }
+    };
+
+    checkToken();
+  }, [router, loggedInUser]);
 
   useEffect(() => {
     fetchUsers();
@@ -33,7 +60,7 @@ export default function UsersPage() {
           name: `${user.first_name} ${user.last_name}`,
           phoneNumber: user.phone_number,
           medications: user.medications,
-        }))
+        })),
       );
       setIsLoading(false);
     } catch (error) {
@@ -53,7 +80,7 @@ export default function UsersPage() {
 
   const handleDeleteMedication = async (
     userId: string,
-    medicationId: number
+    medicationId: number,
   ) => {
     try {
       fetchUsers();

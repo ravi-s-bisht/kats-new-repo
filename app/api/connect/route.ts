@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   const { services, config, rtvi_client_version } = await request.json();
 
   if (!services || !config || !process.env.DAILY_BOTS_URL) {
-    console.log('first', services, config, process.env.DAILY_BOTS_URL);
+    console.log("first", services, config, process.env.DAILY_BOTS_URL);
     return new Response(`Services or config not found on request body`, {
       status: 400,
     });
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       openai: process.env.OPENAI_API_KEY,
       grok: process.env.GROK_API_KEY,
       gemini: process.env.GEMINI_API_KEY,
-      elevenlabs: process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY
+      elevenlabs: process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY,
     },
     config: [...config],
     rtvi_client_version,

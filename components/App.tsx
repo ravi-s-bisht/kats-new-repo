@@ -1,7 +1,15 @@
 "use client";
 
 import { Ear, Loader2 } from "lucide-react";
-import { Dispatch, SetStateAction, useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { RTVIError, RTVIEvent, RTVIMessage } from "realtime-ai";
 import {
   useRTVIClient,
@@ -13,8 +21,9 @@ import { AppContext } from "./context";
 import Session from "./Session";
 import { Configure } from "./Setup";
 import { Alert } from "./ui/alert";
-import { Button } from "./ui/button";
+import { Button } from "./ui/button_old";
 import * as Card from "./ui/card";
+import { useRouter } from "next/navigation";
 
 const status_text = {
   idle: "Initializing...",
@@ -24,9 +33,16 @@ const status_text = {
   disconnected: "Start",
 };
 
-export default function App({ setShowSplash } : { setShowSplash: Dispatch<SetStateAction<boolean>> }) {
+export default function App({
+  setShowSplash,
+  botId
+}: {
+  setShowSplash: Dispatch<SetStateAction<boolean>>;
+  botId: number | null;
+}) {
   const voiceClient = useRTVIClient()!;
   const transportState = useRTVIClientTransportState();
+  const router = useRouter();
 
   const [appState, setAppState] = useState<
     "idle" | "ready" | "connecting" | "connected"
@@ -42,7 +58,7 @@ export default function App({ setShowSplash } : { setShowSplash: Dispatch<SetSta
       const errorData = message.data as { error: string; fatal: boolean };
       if (!errorData.fatal) return;
       setError(errorData.error);
-    }, [])
+    }, []),
   );
 
   useEffect(() => {
@@ -53,13 +69,15 @@ export default function App({ setShowSplash } : { setShowSplash: Dispatch<SetSta
   }, [appState, voiceClient]);
 
   useEffect(() => {
-    voiceClient.params = {
-      ...voiceClient.params,
-      requestData: {
-        ...voiceClient.params.requestData,
-        ...clientParams,
-      },
-    };
+    if (voiceClient) {
+      voiceClient.params = {
+        ...voiceClient.params,
+        requestData: {
+          ...voiceClient.params.requestData,
+          ...clientParams,
+        },
+      };
+    }
   }, [voiceClient, appState, clientParams]);
 
   useEffect(() => {
@@ -86,7 +104,9 @@ export default function App({ setShowSplash } : { setShowSplash: Dispatch<SetSta
   }, [transportState]);
 
   async function start() {
+    console.log('start being clicked before join');
     if (!voiceClient) return;
+    console.log('start being clicked AFTERRRR join');
 
     // Join the session
     try {
@@ -102,7 +122,7 @@ export default function App({ setShowSplash } : { setShowSplash: Dispatch<SetSta
 
   async function leave() {
     await voiceClient.disconnect();
-    setShowSplash(true)
+    router.push("/voice-avatars");
   }
 
   /**
@@ -133,8 +153,7 @@ export default function App({ setShowSplash } : { setShowSplash: Dispatch<SetSta
   const isReady = appState === "ready";
 
   return (
-    
-    <Card.Card shadow className="animate-appear max-w-lg">
+    <Card.Card shadow className="animate-appear max-w-lg mt-8">
       <Card.CardHeader>
         <Card.CardTitle>Configuration</Card.CardTitle>
       </Card.CardHeader>

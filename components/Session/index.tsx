@@ -1,3 +1,5 @@
+"use client";
+
 import { LineChart, Loader2, LogOut, Settings, StopCircle } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -11,7 +13,7 @@ import { useRTVIClient, useRTVIClientEvent } from "realtime-ai-react";
 
 import StatsAggregator from "../../utils/stats_aggregator";
 import { Configure } from "../Setup";
-import { Button } from "../ui/button";
+import { Button } from "../ui/button_old";
 import * as Card from "../ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
@@ -52,7 +54,7 @@ export const Session = React.memo(
         metrics?.ttfb?.map((m: { processor: string; value: number }) => {
           stats_aggregator.addStat([m.processor, "ttfb", m.value, Date.now()]);
         });
-      }, [])
+      }, []),
     );
 
     useRTVIClientEvent(
@@ -65,7 +67,7 @@ export const Session = React.memo(
           bingSoundRef.current.play();
         }*/
         setHasStarted(true);
-      }, [hasStarted])
+      }, [hasStarted]),
     );
 
     useRTVIClientEvent(
@@ -78,7 +80,7 @@ export const Session = React.memo(
 
         if (hasStarted) return;
         setHasStarted(true);
-      }, [hasStarted])
+      }, [hasStarted]),
     );
 
     // ---- Effects
@@ -169,7 +171,7 @@ export const Session = React.memo(
               statsAggregator={stats_aggregator}
               handleClose={() => setShowStats(false)}
             />,
-            document.getElementById("tray")!
+            document.getElementById("tray")!,
           )}
 
         <div className="flex-1 flex flex-col items-center justify-center w-full">
@@ -245,7 +247,7 @@ export const Session = React.memo(
       </>
     );
   },
-  (p, n) => p.state === n.state
+  (p, n) => p.state === n.state,
 );
 
 Session.displayName = "Session";

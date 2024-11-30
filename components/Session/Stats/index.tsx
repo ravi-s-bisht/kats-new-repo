@@ -8,7 +8,7 @@ import {
 import { Loader2, X } from "lucide-react";
 import { current } from "tailwindcss/colors";
 
-import { Button } from "../../ui/button";
+import { Button } from "../../ui/button_old";
 import HelpTip from "../../ui/helptip";
 
 import styles from "./styles.module.css";
@@ -90,7 +90,7 @@ const StatsTile = ({
 export const Stats = React.memo(
   ({ statsAggregator, handleClose }: StatsProps) => {
     const [currentStats, setCurrentStats] = useState<StatsMap>(
-      statsAggregator.statsMap
+      statsAggregator.statsMap,
     );
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -169,7 +169,7 @@ export const Stats = React.memo(
       </div>
     );
   },
-  () => true
+  () => true,
 );
 
 Stats.displayName = "Stats";

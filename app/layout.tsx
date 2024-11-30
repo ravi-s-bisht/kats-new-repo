@@ -1,36 +1,35 @@
 import type { Metadata } from "next";
-import { Inter, Space_Mono } from "next/font/google";
-
+import { Inter } from "next/font/google";
 import "./global.css";
+import Header from "@/components/Header";
+import { LoggedInUserContextProvider } from "@/src/contexts/LoggedInUserContext";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+// import { Toaster } from "@/components/ui/toaster"
 
-// Font
-const fontSans = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-sans",
-});
-
-const fontMono = Space_Mono({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-mono",
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AvatarX Demo",
-  description: "AvatarX Demo",
-  metadataBase: new URL("https://avatarx.live"),
+  title: "AvatarX Dashboard",
+  description: "Dashboard for AvatarX senior companion platform",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className={`${fontSans.variable} ${fontMono.variable}`}>
-        {children}
+      <body className={inter.className + " " + `flex flex-col bg-white`}>
+        <GoogleOAuthProvider
+          clientId={process.env.NEXT_PUBLIC_GOOGLE_LOGIN_API_KEY || ""}
+        >
+          <LoggedInUserContextProvider>
+            <Header />
+            {children}
+            {/* <Toaster /> */}
+          </LoggedInUserContextProvider>
+        </GoogleOAuthProvider>
       </body>
     </html>
   );

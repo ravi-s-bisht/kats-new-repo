@@ -31,21 +31,21 @@ export const Agent: React.FC<{
       useCallback(() => {
         setHasStarted(false);
         setBotStatus("disconnected");
-      }, [])
+      }, []),
     );
 
     useRTVIClientEvent(
       RTVIEvent.BotStartedSpeaking,
       useCallback(() => {
         setBotIsTalking(true);
-      }, [])
+      }, []),
     );
 
     useRTVIClientEvent(
       RTVIEvent.BotStoppedSpeaking,
       useCallback(() => {
         setBotIsTalking(false);
-      }, [])
+      }, []),
     );
 
     // Cleanup
@@ -54,7 +54,7 @@ export const Agent: React.FC<{
     const cx = clsx(
       styles.agentWindow,
       hasStarted && styles.ready,
-      botIsTalking && styles.talking
+      botIsTalking && styles.talking,
     );
 
     return (
@@ -72,7 +72,7 @@ export const Agent: React.FC<{
       </div>
     );
   },
-  (p, n) => p.isReady === n.isReady
+  (p, n) => p.isReady === n.isReady,
 );
 Agent.displayName = "Agent";
 

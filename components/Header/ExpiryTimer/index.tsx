@@ -19,7 +19,7 @@ const ExpiryTimer: React.FC = () => {
 
   useRTVIClientEvent(
     RTVIEvent.Connected,
-    useCallback(() => setExp(voiceClient?.transportExpiry), [voiceClient])
+    useCallback(() => setExp(voiceClient?.transportExpiry), [voiceClient]),
   );
 
   useRTVIClientEvent(
@@ -27,7 +27,7 @@ const ExpiryTimer: React.FC = () => {
     useCallback(() => {
       setExp(undefined);
       setTime({ minutes: 0, seconds: 0 });
-    }, [])
+    }, []),
   );
 
   const noExpiry = !exp || exp === 0;

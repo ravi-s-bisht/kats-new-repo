@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import db from "../db/connection";
-import moment from "moment";
 
 export async function GET(req: Request) {
-  console.log('process: ', process.env.MYSQL_HOST, process.env.MYSQL_USER, process.env.MYSQL_PASSWORD);
+  console.log('userrrrrr backend', req.user);
+  console.log("headers", req.headers);
   try {
     const id = new URL(req.url).searchParams.get("id");
 
@@ -15,7 +15,7 @@ export async function GET(req: Request) {
         "medications.id as medication_id",
         "medications.medication_name",
         "medications.reminder_time",
-        "medications.executed_datetime"
+        "medications.executed_datetime",
       );
 
     if (id) {
@@ -64,7 +64,7 @@ export async function GET(req: Request) {
   } catch (error) {
     return NextResponse.json(
       { message: "Failed to fetch user(s)" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     if (existingUser) {
       return NextResponse.json(
         { message: "Phone number already exists" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
   } catch (error) {
     return NextResponse.json(
       { message: "Failed to create user" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -111,7 +111,7 @@ export async function PUT(req: Request) {
   } catch (error) {
     return NextResponse.json(
       { message: "Failed to update user" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -119,7 +119,7 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const id = new URL(req.url).searchParams.get("id");
-    
+
     // Start a transaction to ensure both operations complete or none do
     await db.transaction(async (trx) => {
       // Delete related medications first
@@ -130,12 +130,12 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json(
       { message: "User deleted successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     return NextResponse.json(
       { message: "Failed to delete user" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

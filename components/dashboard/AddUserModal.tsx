@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 interface User {
   name: string;
@@ -12,17 +12,21 @@ interface AddUserModalProps {
   onAddUser: (user: User) => void;
 }
 
-const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onAddUser }) => {
-  const [name, setName] = useState<string>('');
-  const [medication, setMedication] = useState<string>('');
-  const [time, setTime] = useState<string>('AM');
+const AddUserModal: React.FC<AddUserModalProps> = ({
+  isOpen,
+  onClose,
+  onAddUser,
+}) => {
+  const [name, setName] = useState<string>("");
+  const [medication, setMedication] = useState<string>("");
+  const [time, setTime] = useState<string>("AM");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAddUser({ name, medication, time });
-    setName('');
-    setMedication('');
-    setTime('AM');
+    setName("");
+    setMedication("");
+    setTime("AM");
     onClose();
   };
 
@@ -34,7 +38,9 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onAddUser 
         <h2 className="text-xl font-bold mb-4">Add User</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Name</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Name
+            </label>
             <input
               type="text"
               value={name}
@@ -44,7 +50,9 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onAddUser 
             />
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Medication</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Medication
+            </label>
             <input
               type="text"
               value={medication}
@@ -54,7 +62,9 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onAddUser 
             />
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Time</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Time
+            </label>
             <select
               value={time}
               onChange={(e) => setTime(e.target.value)}
@@ -72,7 +82,10 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onAddUser 
             >
               Cancel
             </button>
-            <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-md">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-500 text-white rounded-md"
+            >
               Add User
             </button>
           </div>

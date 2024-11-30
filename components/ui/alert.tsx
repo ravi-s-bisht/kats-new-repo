@@ -40,7 +40,7 @@ export const AlertTitle = React.forwardRef<
     ref={ref}
     className={cn(
       "text-base font-bold flex items-center gap-2 mb-2",
-      className
+      className,
     )}
     {...props}
   />
