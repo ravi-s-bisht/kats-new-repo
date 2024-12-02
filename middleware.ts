@@ -13,7 +13,7 @@ export async function middleware(req: CustomNextRequest) {
   const { pathname } = req.nextUrl;
 
   // Exclude `/api/google-login` from this middleware
-  const excludedPaths = ['/api/google-login', '/api/connect', '/api/contact'];
+  const excludedPaths = ['/api/google-login', '/api/connect', '/api/contact', '/api/hume'];
   if (excludedPaths.includes(pathname)) {
     return NextResponse.next();
   }

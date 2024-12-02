@@ -75,10 +75,15 @@ export default function Homepage() {
                 Start Free Trial
               </Button>
             </motion.div> */}
-            <motion.div variants={fadeIn}>
+            <motion.div variants={fadeIn} className="space-x-7">
               <Link href="#contact">
-                <Button size="lg" className="shadow-sm cursor-pointer">
+                <Button size="lg" variant="outline" className="shadow-sm cursor-pointer">
                   Contact Us
+                </Button>
+              </Link>
+              <Link href="/demos">
+                <Button size="lg" className="shadow-sm cursor-pointer">
+                  Try Demo
                 </Button>
               </Link>
             </motion.div>
