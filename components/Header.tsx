@@ -1,9 +1,15 @@
+"use client";
+
 import Link from "next/link";
 import React from "react";
 import Logo from "./dashboard/Header/logo";
 import { Button } from "./ui/button";
+import { usePathname } from "next/navigation";
 
 function Header() {
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Navigation */}
@@ -13,31 +19,39 @@ function Header() {
         </Link>
         <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
           <Link
-            href="#key-benefits"
+            href={isHomePage ? "#key-benefits" : "/#key-benefits"}
             className="transition-colors hover:text-foreground/80"
           >
             Key Benefits
           </Link>
           <Link
-            href="#cost-savings"
+            href={isHomePage ? "#cost-savings" : "/#cost-savings"}
             className="transition-colors hover:text-foreground/80"
           >
             Cost Savings
           </Link>
           <Link
-            href="#competitive-advantages"
+            href={
+              isHomePage
+                ? "#competitive-advantages"
+                : "/#competitive-advantages"
+            }
             className="transition-colors hover:text-foreground/80"
           >
             Advantages
           </Link>
           <Link
-            href="#scalability-compliance"
+            href={
+              isHomePage
+                ? "#scalability-compliance"
+                : "/#scalability-compliance"
+            }
             className="transition-colors hover:text-foreground/80"
           >
             Compliance
           </Link>
           <Link
-            href="#contact"
+            href={isHomePage ? "#contact" : "/#contact"}
             className="transition-colors hover:text-foreground/80"
           >
             Contact Us
