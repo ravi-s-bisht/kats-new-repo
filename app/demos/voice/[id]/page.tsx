@@ -5,6 +5,9 @@ import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { VoiceProvider, useVoice } from "@humeai/voice-react";
 import { HUME_PRESET_CHARACTERS } from "@/components/hume/hume-configs";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
 
 const Chat = dynamic(() => import("@/components/hume/components/Chat"), {
   ssr: false,
@@ -62,6 +65,16 @@ export default function VoiceCallPage() {
       }}
     >
       <div className={"grow flex flex-col"}>
+        <div className="flex flex-row justify-start h-30 w-full pl-5 lg:pl-16 py-3">
+          <div className="flex justify-center items-center">
+            <ChevronLeft size={20} />
+            <Link href="/demos" className="z-50">
+              <Button variant="link" className="hover:underline z-50 pl-0">
+                Choose another avatar
+              </Button>
+            </Link>
+          </div>
+        </div>
         <Chat accessToken={accessToken} id={Number(id)} />{" "}
       </div>
     </VoiceProvider>
