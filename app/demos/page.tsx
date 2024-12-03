@@ -20,6 +20,7 @@ import {
 import { Phone, Play, Video } from "lucide-react";
 import Link from "next/link";
 import { HUME_PRESET_CHARACTERS } from "@/components/hume/hume-configs";
+import Image from "next/image";
 
 const categories = ["All", "Voice", "Video"];
 
@@ -28,7 +29,7 @@ export default function VoiceAvatarsPage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   const filteredAvatars = HUME_PRESET_CHARACTERS.filter((avatar) =>
-    avatar.type.toLowerCase().includes(searchTerm.toLowerCase())
+    avatar.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -69,10 +70,22 @@ export default function VoiceAvatarsPage() {
         {filteredAvatars.map((avatar) => (
           <Card key={avatar.id} className="flex flex-col">
             <CardHeader>
-              <CardTitle>{avatar.name}</CardTitle>
+              <div className="flex items-center justify-center">
+                <CardTitle>{avatar.name}</CardTitle>
+              </div>
               {/* <CardDescription>{avatar.language}</CardDescription> */}
             </CardHeader>
             <CardContent className="flex-grow">
+              <div className="flex justify-center items-center">
+                <Image
+                  src={avatar.imageUrl}
+                  alt={avatar.name}
+                  className="rounded-full mb-5"
+                  width={150}
+                  height={150}
+                  priority
+                />
+              </div>
               <p className="mb-4">{avatar.description}</p>
               <Link href={`/demos/${avatar.type}/${avatar.id}`}>
                 <Button className="w-full">
