@@ -9,8 +9,8 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AvatarX Dashboard",
-  description: "Dashboard for AvatarX senior companion platform",
+  title: "AvatarX",
+  description: "AvatarX senior companion platform",
 };
 
 export default function RootLayout({
