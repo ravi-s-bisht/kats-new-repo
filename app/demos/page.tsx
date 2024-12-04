@@ -36,7 +36,7 @@ export default function VoiceAvatarsPage() {
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-8">Avatars Demo</h1>
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <div className="relative sm:w-64">
+        {/* <div className="relative sm:w-64">
           <Input
             placeholder="Search avatars..."
             value={searchTerm}
@@ -52,7 +52,7 @@ export default function VoiceAvatarsPage() {
               &times;
             </button>
           )}
-        </div>
+        </div> */}
         {/* <Select value={selectedCategory} onValueChange={setSelectedCategory}>
           <SelectTrigger className="sm:w-48">
             <SelectValue placeholder="Select category" />

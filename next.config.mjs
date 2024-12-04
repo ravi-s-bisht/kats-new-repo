@@ -14,6 +14,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "app.hamming.ai",
       },
+      {
+        protocol: "https",
+        hostname: "avatarx.blob.core.windows.net"
+      }
     ],
   },
   webpack(config, { isServer }) {
