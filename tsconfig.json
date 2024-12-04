@@ -27,7 +27,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "app/api/db/knexfile.js",
+    "app/api/db/knexfile.old.js",
     "src/contexts/LoggedInUserContext.ts"
   ],
   "exclude": ["node_modules"]

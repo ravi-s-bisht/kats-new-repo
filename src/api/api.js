@@ -30,6 +30,6 @@ instance.interceptors.response.use(
 );
 
 export const googleLogin = (payload) => instance.post(`/google-login`, payload);
-export const checkToken = (payload) => instance.get(`/google-login`, payload);
+export const checkToken = (payload) => instance.post(`/google-login/check-token`, payload);
 
 export const getUsers = async (payload) => instance.get(`/users`, { params: payload });

@@ -24,9 +24,8 @@ export const DeviceSelect: React.FC<DeviceSelectProps> = ({
     <div className="flex flex-col flex-wrap gap-4">
       <Field label="Microphone" error={false}>
         <Select
-          onChange={(e) => updateMic(e.currentTarget.value)}
+          onValueChange={(value) => updateMic(value)}
           value={selectedMic?.deviceId}
-          icon={<Mic size={24} />}
         >
           {availableMics.length === 0 ? (
             <option value="">Loading devices...</option>
@@ -38,6 +37,7 @@ export const DeviceSelect: React.FC<DeviceSelectProps> = ({
             ))
           )}
         </Select>
+        <Mic size={24} />
         {!hideMeter && <AudioIndicatorBar />}
       </Field>
 

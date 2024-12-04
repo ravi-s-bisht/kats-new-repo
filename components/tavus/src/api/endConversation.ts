@@ -7,7 +7,7 @@ export const endConversation = async (conversationId: string) => {
       {
         method: 'POST',
         headers: {
-          'x-api-key': TAVUS_API_KEY,
+          'x-api-key': TAVUS_API_KEY || "",
         },
       }
     );

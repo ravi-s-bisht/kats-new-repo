@@ -18,23 +18,27 @@ export async function POST(request: Request) {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
-      },
+      }
     );
 
+    console.log('first userInfo', userInfo);
+
     const emailDomain = userInfo.data.email.split("@")[1].split(".")[0];
-    const role = ["yahoo"].includes(emailDomain) ? "user" : "admin";
+    const role = ["yahoo"].includes(emailDomain) ? "user" : "facility";
 
     console.log("emailDomain", emailDomain, role);
 
     let loggedInUser = null;
 
-    if (role == "admin") {
-      loggedInUser = await db("admins")
+    const user = await db("users").where({ email: userInfo.data.email }).first();
+
+    if (role == "facility" || user.role == "facility") {
+      loggedInUser = await db("users")
         .where({ email: userInfo.data.email })
         .first();
     } else if (role == "user") {
       loggedInUser = await db("users")
-        .where({ email: userInfo.data.email })
+        .where({ email: userInfo.data.email, role: "user" })
         .first();
     }
 
@@ -42,17 +46,18 @@ export async function POST(request: Request) {
       // Return error message
       return NextResponse.json(
         { error: "User not registered." },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
     // if logged in user doesn't exist and role is admin, create a new admin in the database
-    if (!loggedInUser && role == "admin") {
-      loggedInUser = await db("admins")
+    if (!loggedInUser && role == "facility") {
+      loggedInUser = await db("users")
         .insert({
           email: userInfo.data.email,
           first_name: userInfo.data.given_name,
           last_name: userInfo.data.family_name,
+          role: "facility",
           branch_id: 1,
         })
         .returning("*");
@@ -80,28 +85,5 @@ export async function POST(request: Request) {
   } catch (error) {
     console.log("error", error);
     return NextResponse.json({ error: "Server error!" }, { status: 50 });
-  }
-}
-
-// get endpoint to check if token is valid
-export async function GET(request: Request) {
-  try {
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Token missing" }, { status: 401 });
-    }
-    const token = authHeader.split(" ")[1]; // Extract the token from the header
-    const validatedToken = authenticateUserToken(token);
-
-    if (!validatedToken) {
-      return NextResponse.json({ error: "Token invalid" }, { status: 401 });
-    }
-
-    return NextResponse.json(validatedToken);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Authentication failed" },
-      { status: 401 },
-    );
   }
 }

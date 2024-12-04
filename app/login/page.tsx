@@ -19,19 +19,22 @@ export default function SignInPage() {
   const login = useGoogleLogin({
     onSuccess: async (codeResponse: { access_token: string }) => {
       try {
+        console.log('codeResponse', codeResponse);
         const res = await googleLogin({
           token: codeResponse.access_token,
         });
-        console.log("Logging in with response:", res.data);
+
+        console.log('codeResponse with ressssss', codeResponse, res);
+
         if (res.status === 200) {
           localStorage.setItem("token", res.data.user.token);
           if (res.data.user.role == "user") router.push("/voice-avatars");
-          else if (res.data.user.role == "admin")
+          else if (res.data.user.role == "facility")
             router.push("/admin/dashboard/users");
 
           setLoggedInUser(res.data.user);
 
-          console.log("pushed to avatars: ", codeResponse.access_token);
+          console.log("pushed to avatars: ", codeResponse.access_token, res.data);
         } else {
           console.error("Error logging in:", res);
         }

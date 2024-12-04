@@ -30,7 +30,7 @@ export const Splash: React.FC<SplashProps> = ({ handleReady, params }) => {
       const resolvedParams = await params;
       setBotId(Number(resolvedParams.slug));
       console.log('fetcheddd: ', resolvedParams)
-      const presetCharacter = PRESET_CHARACTERS.find((avatar) => avatar.id === Number(resolvedParams.slug?.id))
+      const presetCharacter = PRESET_CHARACTERS.find((avatar) => avatar.id === Number(resolvedParams.slug))
       console.log('ALLLL: ', PRESET_CHARACTERS)
       console.log('presetCharacter: ', presetCharacter)
       setAvatar(presetCharacter);
@@ -58,7 +58,6 @@ export const Splash: React.FC<SplashProps> = ({ handleReady, params }) => {
         <Card key={avatar?.id} className="flex flex-col">
           <CardHeader>
             <CardTitle>{avatar?.name}</CardTitle>
-            <CardDescription>{avatar?.language}</CardDescription>
           </CardHeader>
         </Card>
 

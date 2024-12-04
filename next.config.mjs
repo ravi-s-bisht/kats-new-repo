@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // typescript: {
+  //   ignoreBuildErrors: true,
+  // },
   serverExternalPackages: ["pg", "@azure/app-configuration", "oracledb"],
   images: {
     remotePatterns: [

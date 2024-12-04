@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import db from "../db/connection";
 
 export async function GET(req: Request) {
-  console.log('userrrrrr backend', req.user);
   console.log("headers", req.headers);
   try {
     const id = new URL(req.url).searchParams.get("id");

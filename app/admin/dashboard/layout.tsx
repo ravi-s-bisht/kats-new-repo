@@ -50,8 +50,8 @@ export default function DashboardLayout({
                 href={item.href}
                 className={cn(
                   "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent",
-                  pathname === item.href && "bg-accent",
-                  isCollapsed && "justify-center"
+                  pathname === item.href ? "bg-accent" : "",
+                  isCollapsed ? "justify-center" : ""
                 )}
               >
                 <item.icon className="h-4 w-4" />
@@ -81,7 +81,7 @@ export default function DashboardLayout({
                   href={item.href}
                   className={cn(
                     "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent",
-                    pathname === item.href && "bg-accent"
+                    pathname === item.href ? "bg-accent" : ""
                   )}
                 >
                   <item.icon className="h-4 w-4" />

@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
+import { NextRequest } from 'next/server'; // Import the type
 
-export async function POST(req) {
+export async function POST(req: NextRequest) { // Explicitly type the req parameter
   const body = await req.json(); // Parse JSON request body
 
   const { name, email, subject, message } = body;

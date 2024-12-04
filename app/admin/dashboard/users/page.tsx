@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button_old";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -33,7 +33,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Pill, Eye } from "lucide-react";
-import { getUsers } from "@/src/api/api";
+import { checkToken, getUsers } from "@/src/api/api";
 
 // Mock data for users
 const users = [
@@ -96,6 +96,12 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    const response = checkToken({ token: localStorage.getItem("token") });
+
+    console.log('check token response: ', response);
   }, []);
 
   const onAddUser = (data: z.infer<typeof userSchema>) => {

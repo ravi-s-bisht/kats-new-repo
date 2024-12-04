@@ -4,9 +4,10 @@ import jwt from 'jsonwebtoken';
 
 const SECRET_KEY = process.env.JWT_SECRET;
 
-// Extend NextRequest to include user property
+// Extend NextRequest to include user and query properties
 interface CustomNextRequest extends NextRequest {
   user?: any; // Define the type of user as needed
+  query: { [key: string]: string | string[] }; // Add query property
 }
 
 export async function middleware(req: CustomNextRequest) {
@@ -19,7 +20,14 @@ export async function middleware(req: CustomNextRequest) {
   }
 
   if (pathname.startsWith('/api')) {
-    const authHeader = req.headers.get('authorization') || req.cookies.get('token') || req.body.token || req.query.token || '';
+    const authHeader = req.headers.get('authorization') || req.cookies.get('token') || (await req.text().then(text => {
+      try {
+        const body = JSON.parse(text);
+        return body.token || '';
+      } catch {
+        return '';
+      }
+    })) || req.query.token || '';
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
