@@ -65,7 +65,7 @@ export default function VoiceCallPage() {
       }}
     >
       <div className={"grow flex flex-col"}>
-        <div className="flex flex-row justify-start h-30 w-full pl-5 lg:pl-16 py-3">
+        <div className="flex flex-row justify-start h-30 w-full pl-5 lg:pl-[125px] py-3">
           <div className="flex justify-center items-center">
             <ChevronLeft size={20} />
             <Link href="/demos" className="z-50">
