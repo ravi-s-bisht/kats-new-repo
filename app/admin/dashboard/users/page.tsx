@@ -33,31 +33,38 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Pill, Eye } from "lucide-react";
-import { checkToken, getUsers } from "@/src/api/api";
+import {
+  addMedication,
+  checkToken,
+  createUser,
+  deleteMedication,
+  deleteUser,
+  getUsers,
+} from "@/src/api/api";
 
 // Mock data for users
-const users = [
-  {
-    id: 1,
-    firstName: "John",
-    lastName: "Doe",
-    phone: "123-456-7890",
-    email: "john@example.com",
-  },
-  {
-    id: 2,
-    firstName: "Jane",
-    lastName: "Smith",
-    phone: "098-765-4321",
-    email: "jane@example.com",
-  },
-];
+// const users = [
+//   {
+//     id: 1,
+//     firstName: "John",
+//     lastName: "Doe",
+//     phone: "123-456-7890",
+//     email: "john@example.com",
+//   },
+//   {
+//     id: 2,
+//     firstName: "Jane",
+//     lastName: "Smith",
+//     phone: "098-765-4321",
+//     email: "jane@example.com",
+//   },
+// ];
 
 const userSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   phone: z.string().regex(/^\+\d{9,15}$/, "Invalid phone number format"),
-  email: z.string().email("Invalid email address"),
+  // email: z.string().email("Invalid email address"),
 });
 
 const medicationSchema = z.object({
@@ -73,12 +80,12 @@ export default function UsersPage() {
   const [isShowMedicationsOpen, setIsShowMedicationsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [medications, setMedications] = useState<
-    { id: number; name: string; time: string }[]
+    { id: number; medication_name: string; reminder_time: string }[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const [userss, setUsers] = useState([]);
+  const [users, setUsers] = useState<any[]>([]);
 
   const userForm = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema),
@@ -89,61 +96,88 @@ export default function UsersPage() {
   });
 
   const fetchUsers = async () => {
-    const res = await getUsers({ token: localStorage.getItem("token") });
-    console.log("user fetch: ", res.data);
+    setIsLoading(true);
+    const res = await getUsers();
     setUsers(res.data);
+    setIsLoading(false);
   };
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  useEffect(() => {
-    const response = checkToken({ token: localStorage.getItem("token") });
+  // useEffect(() => {
+  //   const response = checkToken({ token: localStorage.getItem("token") });
 
-    console.log('check token response: ', response);
-  }, []);
+  //   console.log('check token response: ', response);
+  // }, []);
 
-  const onAddUser = (data: z.infer<typeof userSchema>) => {
+  const onAddUser = async (data: z.infer<typeof userSchema>) => {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      console.log("Adding user:", data);
-      setIsLoading(false);
+    try {
+      // Simulate API call
+      await createUser({
+        first_name: data.firstName,
+        last_name: data.lastName,
+        phone_number: data.phone,
+      });
       setIsAddUserOpen(false);
-      toast({
-        title: "User added successfully",
-        description: `${data.firstName} ${data.lastName} has been added to the system.`,
-      });
-    }, 1000);
+      fetchUsers();
+      userForm.reset();
+    } catch (error) {
+      console.error("Error adding user: ", error);
+      // Optionally, you can show a toast notification here
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const onAddMedication = (data: z.infer<typeof medicationSchema>) => {
+  const onAddMedication = async (data: z.infer<typeof medicationSchema>) => {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      console.log("Adding medication:", data);
-      setMedications([...medications, { id: Date.now(), ...data }]);
-      setIsLoading(false);
+    try {
+      // Simulate API call
+      await addMedication({
+        user_id: selectedUser,
+        medication_name: data.name,
+        reminder_time: data.time,
+      });
       setIsAddMedicationOpen(false);
-      toast({
-        title: "Medication added successfully",
-        description: `${data.name} has been added to the user's medication list.`,
-      });
-    }, 1000);
+      fetchUsers();
+    } catch (error) {
+      console.error("Error adding medication: ", error);
+      // Optionally, you can show a toast notification here
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const onDeleteMedication = (id: number) => {
+  const onDeleteMedication = async (id: number) => {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setMedications(medications.filter((med) => med.id !== id));
-      setIsLoading(false);
-      toast({
-        title: "Medication deleted successfully",
-        description: "The medication has been removed from the user's list.",
+    try {
+      // Simulate API call
+      await deleteMedication({
+        id: id,
       });
-    }, 1000);
+      fetchUsers();
+    } catch (error) {
+      console.error("Error deleting medication: ", error);
+      // Optionally, you can show a toast notification here
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onDeleteUser = async (id: number) => {
+    setIsLoading(true);
+    try {
+      await deleteUser({ id });
+      fetchUsers();
+    } catch (error) {
+      console.error("Error deleting user: ", error);
+      // Optionally, you can show a toast notification here
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -206,7 +240,7 @@ export default function UsersPage() {
                     </FormItem>
                   )}
                 />
-                <FormField
+                {/* <FormField
                   control={userForm.control}
                   name="email"
                   render={({ field }) => (
@@ -218,7 +252,7 @@ export default function UsersPage() {
                       <FormMessage />
                     </FormItem>
                   )}
-                />
+                /> */}
                 <Button type="submit" disabled={isLoading}>
                   {isLoading && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -234,158 +268,219 @@ export default function UsersPage() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[50px]">
+            {/* <TableHead className="w-[50px]">
               <Checkbox />
-            </TableHead>
+            </TableHead> */}
             <TableHead>Name</TableHead>
             <TableHead>Phone Number</TableHead>
-            <TableHead>Email</TableHead>
+            {/* <TableHead>Email</TableHead> */}
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>
-                <Checkbox />
-              </TableCell>
-              <TableCell className="font-medium">
-                <div className="flex items-center">
-                  <Avatar className="h-8 w-8 mr-2">
-                    <AvatarFallback>
-                      {user.firstName[0]}
-                      {user.lastName[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  {user.firstName} {user.lastName}
-                </div>
-              </TableCell>
-              <TableCell className="text-left">{user.phone}</TableCell>
-              <TableCell className="text-left">{user.email}</TableCell>
-              <TableCell>
-                <div className="flex space-x-2">
-                  <Dialog
-                    open={isAddMedicationOpen}
-                    onOpenChange={setIsAddMedicationOpen}
-                  >
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedUser(user.id)}
-                      >
-                        <Pill className="mr-2 h-4 w-4" /> Add Medication
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-white">
-                      <DialogHeader>
-                        <DialogTitle>Add Medication</DialogTitle>
-                      </DialogHeader>
-                      <Form {...medicationForm}>
-                        <form
-                          onSubmit={medicationForm.handleSubmit(
-                            onAddMedication
-                          )}
-                          className="space-y-4"
-                        >
-                          <FormField
-                            control={medicationForm.control}
-                            name="name"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Medication Name</FormLabel>
-                                <FormControl>
-                                  <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={medicationForm.control}
-                            name="time"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>
-                                  Reminder Time (America/Los_Angeles)
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} type="time" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <Button type="submit" disabled={isLoading}>
-                            {isLoading && (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            )}
-                            Add Medication
-                          </Button>
-                        </form>
-                      </Form>
-                    </DialogContent>
-                  </Dialog>
-                  <Dialog
-                    open={isShowMedicationsOpen}
-                    onOpenChange={setIsShowMedicationsOpen}
-                  >
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedUser(user.id)}
-                      >
-                        <Eye className="mr-2 h-4 w-4" /> Show Medications
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-white">
-                      <DialogHeader>
-                        <DialogTitle>
-                          Medications for{" "}
-                          {users.find((u) => u.id === selectedUser)?.firstName}{" "}
-                          {users.find((u) => u.id === selectedUser)?.lastName}
-                        </DialogTitle>
-                      </DialogHeader>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Medication Name</TableHead>
-                            <TableHead>Reminder Time</TableHead>
-                            <TableHead>Action</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {medications.map((medication) => (
-                            <TableRow key={medication.id}>
-                              <TableCell>{medication.name}</TableCell>
-                              <TableCell>{medication.time}</TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() =>
-                                    onDeleteMedication(medication.id)
-                                  }
-                                  disabled={isLoading}
-                                >
-                                  {isLoading ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    "Delete"
-                                  )}
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+          {isLoading ? (
+            // Show loader when isLoading is true
+            <TableRow>
+              <TableCell colSpan={3} className="text-center">
+                <Loader2 className="mt-6 h-16 w-16 animate-spin mx-auto" />
               </TableCell>
             </TableRow>
-          ))}
+          ) : users.length === 0 ? (
+            // Show "No users" when the users array is empty
+            <TableRow>
+              <TableCell colSpan={3} className="text-center text-gray-500">
+                No users
+              </TableCell>
+            </TableRow>
+          ) : (
+            // Render users when not loading and the users array is not empty
+            users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell className="font-medium">
+                  <div className="flex items-center">
+                    <Avatar className="h-8 w-8 mr-2">
+                      <AvatarFallback>
+                        {user.first_name[0]}
+                        {user.last_name[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    {user.first_name} {user.last_name}
+                  </div>
+                </TableCell>
+                <TableCell className="text-left">{user.phone_number}</TableCell>
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Dialog
+                      open={isAddMedicationOpen}
+                      onOpenChange={setIsAddMedicationOpen}
+                    >
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedUser(user.id)}
+                          disabled={isLoading}
+                        >
+                          {isLoading && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          <Pill className="mr-2 h-4 w-4" /> Add Medication
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-white">
+                        <DialogHeader>
+                          <DialogTitle>Add Medication</DialogTitle>
+                        </DialogHeader>
+                        <Form {...medicationForm}>
+                          <form
+                            onSubmit={medicationForm.handleSubmit(
+                              onAddMedication
+                            )}
+                            className="space-y-4"
+                          >
+                            <FormField
+                              control={medicationForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Medication Name</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={medicationForm.control}
+                              name="time"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Reminder Time</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} type="time" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <Button type="submit" disabled={isLoading}>
+                              {isLoading && (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              )}
+                              Add Medication
+                            </Button>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
+                    <Dialog
+                      open={isShowMedicationsOpen}
+                      onOpenChange={setIsShowMedicationsOpen}
+                    >
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedUser(user.id)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" /> Show Medications
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-white">
+                        <DialogHeader>
+                          <DialogTitle>
+                            Medications for{" "}
+                            {
+                              users.find((u) => u.id === selectedUser)
+                                ?.first_name
+                            }{" "}
+                            {
+                              users.find((u) => u.id === selectedUser)
+                                ?.last_name
+                            }
+                          </DialogTitle>
+                        </DialogHeader>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Medication Name</TableHead>
+                              <TableHead>Reminder Time</TableHead>
+                              <TableHead>Action</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {isLoading ? (
+                              // Show loader when isLoading is true
+                              <TableRow>
+                                <TableCell colSpan={3} className="text-center">
+                                  <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                                </TableCell>
+                              </TableRow>
+                            ) : users.find((u) => u.id === selectedUser)
+                                ?.medications.length === 0 ? (
+                              // Show "No medications" when the medications array is empty
+                              <TableRow>
+                                <TableCell
+                                  colSpan={3}
+                                  className="text-center text-gray-500"
+                                >
+                                  No medications
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              // Render medications when not loading and the array is not empty
+                              users
+                                .find((u) => u.id === selectedUser)
+                                ?.medications.map((medication: any) => (
+                                  <TableRow key={medication.id}>
+                                    <TableCell className="text-left">
+                                      {medication.medication_name}
+                                    </TableCell>
+                                    <TableCell className="text-left">
+                                      {medication.reminder_time.slice(0, -3)}{" "}
+                                      PST
+                                    </TableCell>
+                                    <TableCell>
+                                      <Button
+                                        variant="destructive"
+                                        className="bg-red-600 text-white"
+                                        size="sm"
+                                        onClick={() =>
+                                          onDeleteMedication(medication.id)
+                                        }
+                                        disabled={isLoading}
+                                      >
+                                        {isLoading ? (
+                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                          "Delete"
+                                        )}
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))
+                            )}
+                          </TableBody>
+                        </Table>
+                      </DialogContent>
+                    </Dialog>
+                    <Button
+                      className="bg-red-600 text-white h-[31px]"
+                      variant="destructive"
+                      onClick={() => onDeleteUser(user.id)}
+                      disabled={isLoading}
+                    >
+                      {isLoading && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Delete
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>

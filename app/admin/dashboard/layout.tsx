@@ -1,27 +1,32 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button_old"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { cn } from "@/src/lib/utils"
-import { MenuIcon, Users, Home, Settings } from 'lucide-react'
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button_old";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { cn } from "@/src/lib/utils";
+import { MenuIcon, Users, Home, Settings } from "lucide-react";
 
 const sidebarItems = [
-  { icon: Home, label: "Dashboard", href: "/dashboard" },
-  { icon: Users, label: "Users", href: "/dashboard/users" },
-  { icon: Settings, label: "Settings", href: "/dashboard/settings" },
-]
+  // { icon: Home, label: "Dashboard", href: "admin/dashboard" },
+  { icon: Users, label: "Users", href: "admin/dashboard/users" },
+  // { icon: Settings, label: "Settings", href: "admin/dashboard/settings" },
+];
 
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
-  const pathname = usePathname()
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    router.push("/admin/dashboard/users");
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden w-full">
@@ -32,8 +37,8 @@ export default function DashboardLayout({
           isCollapsed ? "w-16" : "w-64"
         )}
       >
-        <div className="flex h-14 items-center justify-between px-4 border-b">
-          {!isCollapsed && <span className="font-bold">AvatarX</span>}
+        <div className="flex h-14 items-center justify-between px-4 py-3 border-b">
+          {!isCollapsed && <span className="font-bold">Dashboard</span>}
           <Button
             variant="ghost"
             size="icon"
@@ -96,5 +101,5 @@ export default function DashboardLayout({
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
     </div>
-  )
+  );
 }

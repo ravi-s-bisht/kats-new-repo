@@ -68,6 +68,7 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const { id } = await req.json();
+    
     const deletedCount = await db("medications").where({ id }).del();
 
     if (deletedCount > 0) {

@@ -11,6 +11,7 @@ interface CustomNextRequest extends NextRequest {
 }
 
 export async function middleware(req: CustomNextRequest) {
+  return NextResponse.next();
   const { pathname } = req.nextUrl;
 
   // Exclude `/api/google-login` from this middleware
@@ -39,7 +40,7 @@ export async function middleware(req: CustomNextRequest) {
       if (!SECRET_KEY) {
         throw new Error('JWT_SECRET is not defined');
       }
-      const user = jwt.verify(token, SECRET_KEY);
+      const user = jwt.verify(token, SECRET_KEY || "");
       req.user = user; // Attach user to the request for later use
     } catch (error) {
       return NextResponse.json(

@@ -33,3 +33,8 @@ export const googleLogin = (payload) => instance.post(`/google-login`, payload);
 export const checkToken = (payload) => instance.post(`/google-login/check-token`, payload);
 
 export const getUsers = async (payload) => instance.get(`/users`, { params: payload });
+export const createUser = async (payload) => instance.post('/users', payload);
+export const deleteUser = async (payload) => instance.delete('/users', { params: payload })
+
+export const addMedication = async (payload) => instance.post('/medications', payload);
+export const deleteMedication = async (payload) => instance.delete('/medications', { data: payload });

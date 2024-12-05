@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import db from "../db/connection";
 
 export async function GET(req: Request) {
-  console.log("headers", req.headers);
   try {
     const id = new URL(req.url).searchParams.get("id");
 
@@ -15,7 +14,8 @@ export async function GET(req: Request) {
         "medications.medication_name",
         "medications.reminder_time",
         "medications.executed_datetime",
-      );
+      )
+      .orderBy("users.first_name");
 
     if (id) {
       query.where("users.id", id); // Filter by user ID if provided
