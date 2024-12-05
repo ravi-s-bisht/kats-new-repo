@@ -11,7 +11,7 @@ import { MenuIcon, Users, Home, Settings } from "lucide-react";
 
 const sidebarItems = [
   // { icon: Home, label: "Dashboard", href: "admin/dashboard" },
-  { icon: Users, label: "Users", href: "/" },
+  { icon: Users, label: "Users", href: "/admin/dashboard/users" },
   // { icon: Settings, label: "Settings", href: "admin/dashboard/settings" },
 ];
 
