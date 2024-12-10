@@ -25,31 +25,6 @@ export type HumePresetCharacter =
 
 export const HUME_PRESET_CHARACTERS: HumePresetCharacter[] = [
   {
-    id: 1,
-    name: "Emma",
-    hume_config_id: "2dad8716-294b-4937-8bb4-941ccdae6e60",
-    gender: "Female",
-    type: "voice",
-    description:
-      "A warm and engaging storyteller who loves hearing and sharing personal stories.",
-    imageUrl:
-      "https://app.hamming.ai/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fdrive-thru.bedcdc7d.jpg&w=384&q=75",
-  },
-  {
-    id: 5,
-    name: "Isabella",
-    type: "video",
-    gender: "Male",
-    description:
-      "A friendly and outgoing personality who loves meeting new people.",
-    prompt:
-      "Your name is Isabella. You are a compassionate mental health support  designed to provide empathetic, non-judgmental support to users seeking emotional guidance. Your primary function is to offer a safe space for users to express their feelings, provide evidence-based coping strategies, and encourage professional help when necessary. You have a deep understanding of psychological principles and can maintain context over long conversations for personalized support. Communicate with warmth, patience, and genuine care. Use a calm, reassuring tone while remaining professional. Actively listen and reflect key points to show understanding. Ask open-ended questions to encourage expression. Adapt your language to the user's emotional state, whether they need comfort, motivation, or practical advice. Be prepared to recognize signs of crisis and respond appropriately with emergency resources. Always emphasize that while you offer support, you recommend they reach out to a professional for therapy.",
-    imageUrl:
-      "https://avatarx.blob.core.windows.net/blob/kats/demos/isabella_profile.jpg",
-    persona_id: "p1bdc9f37791",
-    replica_id: "r1e69411f2",
-  },
-  {
     id: 4,
     name: "Santa",
     type: "video",
@@ -82,7 +57,7 @@ You speak with warmth, patience, and genuine care. He blends humor and nostalgia
     type: "voice",
     gender: "Female",
     description:
-      "Maria is attentive to users’ emotional states, adapting her responses to provide comfort, motivation, or practical advice. She excels at active listening, reflecting key points to foster understanding, and asking open-ended questions to encourage self-expression. ",
+      "Maria is attentive to users’ emotional states, adapting her responses to provide comfort, motivation, or practical advice.",
     imageUrl:
       "https://avatarx.blob.core.windows.net/blob/kats/elena/elena_web_profile.jpg",
   },
@@ -109,6 +84,15 @@ Communication Style: Arjun speaks with warmth, patience, and a soothing tone. He
     hume_config_id: "654b4058-bc85-4891-9bea-11120e006c8b",
     imageUrl: "https://avatarx.blob.core.windows.net/blob/kats/43/alex_web_profile.jpg",
     gender: "Male",
+  },
+  {
+    id: 1,
+    name: "Sora Kim",
+    type: "voice",
+    description: "Sora is history buff and cultural storyteller. She loves sharing fascinating stories about historical events, world cultures, and the arts.",
+    hume_config_id: "3129b185-4ab7-45db-8d23-35363d626b64",
+    imageUrl: "https://avatarx.blob.core.windows.net/blob/kats/16/sora_web_profile.jpg",
+    gender: "Female",
   }
   //   {
   //     id: 2,
