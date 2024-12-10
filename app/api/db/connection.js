@@ -7,7 +7,7 @@ const db = Knex({
         port: 3306,
         user: process.env.MYSQL_USER,
         password: process.env.MYSQL_PASS,
-        database: process.env.MYSQL_DB_DEMO,
+        database: process.env.MYSQL_DB_SENIOR,
         ssl: {
             rejectUnauthorized: true
         }
