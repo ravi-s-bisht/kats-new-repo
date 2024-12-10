@@ -70,7 +70,7 @@ export default function VoiceCallPage() {
             <ChevronLeft size={20} />
             <Link href="/demos" className="z-50">
               <Button variant="link" className="hover:underline z-50 pl-0">
-                Choose another avatar
+                Back
               </Button>
             </Link>
           </div>
