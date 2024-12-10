@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { VoiceProvider, useVoice } from "@humeai/voice-react";
-import { HUME_PRESET_CHARACTERS } from "@/components/hume/hume-configs";
+import { HUME_PRESET_CHARACTERS, VoiceHumePresetCharacter } from "@/components/hume/hume-configs";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
@@ -40,7 +40,7 @@ export default function VoiceCallPage() {
   useEffect(() => {
     fetchToken();
     const avatar = HUME_PRESET_CHARACTERS.find(
-      (character) => character.id === Number(id)
+      (character): character is VoiceHumePresetCharacter => character.id === Number(id)
     );
 
     setAvatar(avatar);
