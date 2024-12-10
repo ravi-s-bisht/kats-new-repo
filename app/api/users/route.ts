@@ -4,16 +4,23 @@ import db from "../db/connection";
 export async function GET(req: Request) {
   try {
     const id = new URL(req.url).searchParams.get("id");
+    const admin_id = new URL(req.url).searchParams.get("admin_id");
+
+    // Extract branch_id from the admin
+    const admin = await db("users")
+      .where({ id: admin_id, role: "admin" })
+      .first();
 
     // If no id is provided, fetch all users
     const query = db("users")
+      .where({ branch_id: admin.branch_id, role: "user" })
       .leftJoin("medications", "users.id", "medications.user_id")
       .select(
         "users.*",
         "medications.id as medication_id",
         "medications.medication_name",
         "medications.reminder_time",
-        "medications.executed_datetime",
+        "medications.executed_datetime"
       )
       .orderBy("users.first_name");
 
@@ -32,6 +39,7 @@ export async function GET(req: Request) {
           first_name: row.first_name,
           last_name: row.last_name,
           phone_number: row.phone_number,
+          email: row.email,
           created_at: row.created_at,
           updated_at: row.updated_at,
           medications: [], // Initialize the medications array
@@ -63,46 +71,98 @@ export async function GET(req: Request) {
   } catch (error) {
     return NextResponse.json(
       { message: "Failed to fetch user(s)" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const { first_name, last_name, phone_number } = await req.json();
+    const { first_name, last_name, phone_number, email, admin_id } =
+      await req.json();
+
+    const admin = await db("users")
+      .where({ id: admin_id, role: "admin" })
+      .first();
 
     // Check if the phone number already exists
-    const existingUser = await db("users").where({ phone_number }).first();
+    const existingUser = await db("users")
+      .where({ phone_number, role: "user" })
+      .first();
+    const existingEmail = await db("users")
+      .where({ email, role: "user" })
+      .first();
 
     if (existingUser) {
       return NextResponse.json(
         { message: "Phone number already exists" },
-        { status: 400 },
+        { status: 400 }
+      );
+    }
+
+    if (existingEmail) {
+      return NextResponse.json(
+        { message: "Email already exists" },
+        { status: 400 }
       );
     }
 
     const [newUser] = await db("users")
-      .insert({ first_name, last_name, phone_number })
+      .insert({
+        first_name,
+        last_name,
+        phone_number,
+        email,
+        role: "user",
+        branch_id: admin.branch_id,
+      })
       .returning("*");
     return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { message: "Failed to create user" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
 
 export async function PUT(req: Request) {
   try {
-    const { id, first_name, last_name, phone_number } = await req.json();
-    const [updatedUser] = await db("users")
-      .where({ id })
-      .update({ first_name, last_name, phone_number })
-      .returning("*");
+    const { id, first_name, last_name, phone_number, email } = await req.json();
 
-    if (updatedUser) {
+    // check if email or phone number already exists other than the user being updated
+    const existingUser = await db("users")
+      .where({ phone_number, role: "user" })
+      .whereNot({ id })
+      .first();
+
+    const existingEmail = await db("users")
+      .where({ email, role: "user" })
+      .whereNot({ id })
+      .first();
+
+    if (existingUser) {
+      return NextResponse.json(
+        { message: "Phone number already exists" },
+        { status: 400 }
+      );
+    }
+
+    if (existingEmail) {
+      return NextResponse.json(
+        { message: "Email already exists" },
+        { status: 400 }
+      );
+    }
+
+    // Perform the update
+    const rowsAffected = await db("users")
+      .where({ id, role: "user" })
+      .update({ first_name, last_name, phone_number, email });
+
+    if (rowsAffected) {
+      // Fetch the updated user
+      const updatedUser = await db("users").where({ id }).first();
       return NextResponse.json(updatedUser, { status: 200 });
     } else {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
@@ -110,7 +170,7 @@ export async function PUT(req: Request) {
   } catch (error) {
     return NextResponse.json(
       { message: "Failed to update user" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -124,17 +184,17 @@ export async function DELETE(req: Request) {
       // Delete related medications first
       await trx("medications").where({ user_id: id }).del();
       // Then delete the user
-      await trx("users").where({ id }).del();
+      await trx("users").where({ id, role: "user" }).del();
     });
 
     return NextResponse.json(
       { message: "User deleted successfully" },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     return NextResponse.json(
       { message: "Failed to delete user" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

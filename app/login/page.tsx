@@ -1,71 +1,76 @@
 "use client";
 
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button_old";
-import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useGoogleLogin } from "@react-oauth/google";
 import { googleLogin } from "@/src/api/api";
 import { LoggedInUserContext } from "@/src/contexts/LoggedInUserContext";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/src/contexts/UserContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SignInPage() {
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { loggedInUser, setLoggedInUser } = useContext(LoggedInUserContext);
+  const { setUser, role, setRole } = useUser();
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const login = useGoogleLogin({
-    onSuccess: async (codeResponse: { access_token: string }) => {
+    onSuccess: async (tokenResponse) => {
       try {
-        console.log('codeResponse', codeResponse);
-        const res = await googleLogin({
-          token: codeResponse.access_token,
+        setIsLoading(true);
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token: tokenResponse.access_token }),
         });
 
-        console.log('codeResponse with ressssss', codeResponse, res);
-
-        if (res.status === 200) {
-          localStorage.setItem("token", res.data.user.token);
-          if (res.data.user.role == "user") router.push("/voice-avatars");
-          else if (res.data.user.role == "facility")
-            router.push("/admin/dashboard/users");
-
-          setLoggedInUser(res.data.user);
-
-          console.log("pushed to avatars: ", codeResponse.access_token, res.data);
+        if (res.ok) {
+          const data = await res.json();
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('role', data.role);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          setUser(data.user);
+          setRole(data.role);
+          setIsLoading(false);
+          router.push(data.role === 'admin' ? '/admin/dashboard' : '/avatars');
         } else {
-          console.error("Error logging in:", res);
+          const errorData = await res.json();
+          setLoginError(errorData.error || 'Login failed');
+          toast({
+            title: 'Login failed',
+            description: errorData.error || 'Login failed.',
+          })
+          setIsLoading(false);
         }
-      } catch (e) {
-        console.error("Error during login:", e);
-        // show user notification
+      } catch (error) {
+        console.error('Login error:', error);
+        setLoginError('An unexpected error occurred');
+        setIsLoading(false);
       }
     },
     onError: (error) => {
-      console.log("Login Failed:", error);
-      // Optionally, show user notification for login failure
+      console.error('Google Login Failed:', error);
+      setLoginError('Google login failed. Please try again.');
     },
   });
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    login();
-    // Simulate Google Sign-In process
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Sign-in successful",
-        description: "You have been signed in with Google.",
-      });
-      // Here you would typically redirect to the dashboard or home page
-    }, 2000);
-  };
+  useEffect(() => {
+    console.log('logging')
+    const token = localStorage.getItem('token');
+    if (token) {
+      router.push(role === 'admin' ? 'admin/dashboard' : '/avatars');
+    }
+  }, [router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background w-full">
-      <div className="w-full max-w-md space-y-8 p-8 bg-card rounded-xl shadow-lg">
+      <div className="w-full max-w-md space-y-8 p-8 bg-card rounded-xl shadow-lg mb-16">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-bold">Welcome to AvatarX</h2>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -74,7 +79,7 @@ export default function SignInPage() {
         </div>
         <Button
           className="w-full"
-          onClick={handleGoogleSignIn}
+          onClick={() => login()}
           disabled={isLoading}
         >
           {isLoading ? (

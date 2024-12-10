@@ -5,10 +5,12 @@ import React from "react";
 import Logo from "./dashboard/Header/logo";
 import { Button } from "./ui/button";
 import { usePathname } from "next/navigation";
+import { useUser } from "@/src/contexts/UserContext";
 
 function Header() {
   const pathname = usePathname();
   const isHomePage = pathname === "/";
+  const { user, logout, role } = useUser();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -67,9 +69,24 @@ function Header() {
           {/* <Button variant="link" className="hidden md:inline-flex">
             Sign In
           </Button> */}
-          {/* <Link href="/signup">
-            <Button>Get Started</Button>
-          </Link> */}
+
+          {role == "admin" && user && pathname == "/" && (
+            <Link href="/admin/dashboard/users">
+              <Button variant="outline">Go to Dashboard</Button>
+            </Link>
+          )}
+          {role == "user" && user && pathname == "/" && (
+            <Link href="/avatars">
+              <Button variant="outline">Go to Avatars</Button>
+            </Link>
+          )}
+          {user && role == "user" && (
+            <Link href="/login" onClick={() => logout()}>
+              <Button variant="destructive" className="bg-red-500 text-white">
+                Log out
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>

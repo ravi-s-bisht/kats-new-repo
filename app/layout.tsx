@@ -4,6 +4,8 @@ import "./global.css";
 import Header from "@/components/Header";
 import { LoggedInUserContextProvider } from "@/src/contexts/LoggedInUserContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { UserProvider } from "@/src/contexts/UserContext";
+import { Toaster } from "@/components/ui/toaster";
 // import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] });
@@ -24,11 +26,11 @@ export default function RootLayout({
         <GoogleOAuthProvider
           clientId={process.env.NEXT_PUBLIC_GOOGLE_LOGIN_API_KEY || ""}
         >
-          <LoggedInUserContextProvider>
+          <UserProvider>
             <Header />
             {children}
-            {/* <Toaster /> */}
-          </LoggedInUserContextProvider>
+            <Toaster />
+          </UserProvider>
         </GoogleOAuthProvider>
       </body>
     </html>

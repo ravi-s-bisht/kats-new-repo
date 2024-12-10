@@ -29,75 +29,78 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Pill, Eye } from "lucide-react";
-import {
-  addMedication,
-  checkToken,
-  createUser,
-  deleteMedication,
-  deleteUser,
-  getUsers,
-} from "@/src/api/api";
+import { Loader2, Plus, Eye } from "lucide-react";
+import { useUser } from "@/src/contexts/UserContext";
+import { createUser, deleteUser, getUsers, updateUser } from "@/src/api/api";
+import { withAuth } from "@/components/withAuth";
 
-// Mock data for users
-// const users = [
-//   {
-//     id: 1,
-//     firstName: "John",
-//     lastName: "Doe",
-//     phone: "123-456-7890",
-//     email: "john@example.com",
-//   },
-//   {
-//     id: 2,
-//     firstName: "Jane",
-//     lastName: "Smith",
-//     phone: "098-765-4321",
-//     email: "jane@example.com",
-//   },
-// ];
+// Type definitions
+type User = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  email: string;
+};
+
+type NewUser = {
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  email: string;
+}
+
+// Mock data
+const mockUsers: User[] = [
+  {
+    id: 1,
+    first_name: "John",
+    last_name: "Doe",
+    phone_number: "+1234567890",
+    email: "john.doe@example.com",
+  },
+  {
+    id: 2,
+    first_name: "Jane",
+    last_name: "Smith",
+    phone_number: "+1987654321",
+    email: "jane.smith@example.com",
+  },
+  {
+    id: 3,
+    first_name: "Alice",
+    last_name: "Johnson",
+    phone_number: "+1122334455",
+    email: "alice.johnson@example.com",
+  },
+];
 
 const userSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   phone: z.string().regex(/^\+\d{9,15}$/, "Invalid phone number format"),
-  // email: z.string().email("Invalid email address"),
+  email: z.string().email("Invalid email address"),
 });
 
-const medicationSchema = z.object({
-  name: z.string().min(1, "Medication name is required"),
-  time: z
-    .string()
-    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format"),
-});
-
-export default function UsersPage() {
+function UsersPage() {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
-  const [isAddMedicationOpen, setIsAddMedicationOpen] = useState(false);
-  const [isShowMedicationsOpen, setIsShowMedicationsOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<number | null>(null);
-  const [medications, setMedications] = useState<
-    { id: number; medication_name: string; reminder_time: string }[]
-  >([]);
+  const [isEditingUser, setIsEditingUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useUser();
   const { toast } = useToast();
 
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>(mockUsers);
 
   const userForm = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema),
   });
 
-  const medicationForm = useForm<z.infer<typeof medicationSchema>>({
-    resolver: zodResolver(medicationSchema),
-  });
-
   const fetchUsers = async () => {
     setIsLoading(true);
-    const res = await getUsers();
+    if (!user) return;
+    const res = await getUsers({ admin_id: user.id });
     setUsers(res.data);
     setIsLoading(false);
   };
@@ -106,62 +109,45 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
-  // useEffect(() => {
-  //   const response = checkToken({ token: localStorage.getItem("token") });
-
-  //   console.log('check token response: ', response);
-  // }, []);
-
   const onAddUser = async (data: z.infer<typeof userSchema>) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await createUser({
+      const newUser: NewUser = {
         first_name: data.firstName,
         last_name: data.lastName,
         phone_number: data.phone,
-      });
-      setIsAddUserOpen(false);
+        email: data.email,
+      };
+      
+      await createUser({...newUser, admin_id: user?.id});
       fetchUsers();
+
+      setIsAddUserOpen(false);
       userForm.reset();
     } catch (error) {
       console.error("Error adding user: ", error);
-      // Optionally, you can show a toast notification here
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const onAddMedication = async (data: z.infer<typeof medicationSchema>) => {
+  const onEditUser = async (data: z.infer<typeof userSchema>) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await addMedication({
-        user_id: selectedUser,
-        medication_name: data.name,
-        reminder_time: data.time,
-      });
-      setIsAddMedicationOpen(false);
+      await updateUser({
+        id: isEditingUser?.id,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        phone_number: data.phone,
+        email: data.email,
+      })
       fetchUsers();
+      setIsAddUserOpen(false);
+      setIsEditingUser(null);
+      userForm.reset();
     } catch (error) {
-      console.error("Error adding medication: ", error);
-      // Optionally, you can show a toast notification here
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onDeleteMedication = async (id: number) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await deleteMedication({
-        id: id,
-      });
-      fetchUsers();
-    } catch (error) {
-      console.error("Error deleting medication: ", error);
-      // Optionally, you can show a toast notification here
+      console.error("Error editing user:", error);
     } finally {
       setIsLoading(false);
     }
@@ -174,7 +160,7 @@ export default function UsersPage() {
       fetchUsers();
     } catch (error) {
       console.error("Error deleting user: ", error);
-      // Optionally, you can show a toast notification here
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -184,7 +170,16 @@ export default function UsersPage() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Users</h1>
-        <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+        <Dialog
+          open={isAddUserOpen}
+          onOpenChange={(isOpen) => {
+            setIsEditingUser(null);
+            setIsAddUserOpen(isOpen);
+            if (!isOpen) {
+              userForm.reset(); // Reset the form when the modal is closed
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" /> Add User
@@ -240,7 +235,7 @@ export default function UsersPage() {
                     </FormItem>
                   )}
                 />
-                {/* <FormField
+                <FormField
                   control={userForm.control}
                   name="email"
                   render={({ field }) => (
@@ -252,7 +247,7 @@ export default function UsersPage() {
                       <FormMessage />
                     </FormItem>
                   )}
-                /> */}
+                />
                 <Button type="submit" disabled={isLoading}>
                   {isLoading && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -268,12 +263,9 @@ export default function UsersPage() {
       <Table>
         <TableHeader>
           <TableRow>
-            {/* <TableHead className="w-[50px]">
-              <Checkbox />
-            </TableHead> */}
             <TableHead>Name</TableHead>
             <TableHead>Phone Number</TableHead>
-            {/* <TableHead>Email</TableHead> */}
+            <TableHead>Email</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -281,14 +273,14 @@ export default function UsersPage() {
           {isLoading ? (
             // Show loader when isLoading is true
             <TableRow>
-              <TableCell colSpan={3} className="text-center">
+              <TableCell colSpan={4} className="text-center">
                 <Loader2 className="mt-6 h-16 w-16 animate-spin mx-auto" />
               </TableCell>
             </TableRow>
           ) : users.length === 0 ? (
             // Show "No users" when the users array is empty
             <TableRow>
-              <TableCell colSpan={3} className="text-center text-gray-500">
+              <TableCell colSpan={4} className="text-center text-gray-500">
                 No users
               </TableCell>
             </TableRow>
@@ -308,163 +300,24 @@ export default function UsersPage() {
                   </div>
                 </TableCell>
                 <TableCell className="text-left">{user.phone_number}</TableCell>
+                <TableCell className="text-left">{user.email}</TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
-                    <Dialog
-                      open={isAddMedicationOpen}
-                      onOpenChange={setIsAddMedicationOpen}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsEditingUser(user);
+                        userForm.setValue("firstName", user.first_name);
+                        userForm.setValue("lastName", user.last_name);
+                        userForm.setValue("phone", user.phone_number);
+                        userForm.setValue("email", user.email);
+                        setIsAddUserOpen(true);
+                      }}
+                      disabled={isLoading}
                     >
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedUser(user.id)}
-                          disabled={isLoading}
-                        >
-                          {isLoading && (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          )}
-                          <Pill className="mr-2 h-4 w-4" /> Add Medication
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-white">
-                        <DialogHeader>
-                          <DialogTitle>Add Medication</DialogTitle>
-                        </DialogHeader>
-                        <Form {...medicationForm}>
-                          <form
-                            onSubmit={medicationForm.handleSubmit(
-                              onAddMedication
-                            )}
-                            className="space-y-4"
-                          >
-                            <FormField
-                              control={medicationForm.control}
-                              name="name"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Medication Name</FormLabel>
-                                  <FormControl>
-                                    <Input {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={medicationForm.control}
-                              name="time"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Reminder Time</FormLabel>
-                                  <FormControl>
-                                    <Input {...field} type="time" />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <Button type="submit" disabled={isLoading}>
-                              {isLoading && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              )}
-                              Add Medication
-                            </Button>
-                          </form>
-                        </Form>
-                      </DialogContent>
-                    </Dialog>
-                    <Dialog
-                      open={isShowMedicationsOpen}
-                      onOpenChange={setIsShowMedicationsOpen}
-                    >
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedUser(user.id)}
-                        >
-                          <Eye className="mr-2 h-4 w-4" /> Show Medications
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-white">
-                        <DialogHeader>
-                          <DialogTitle>
-                            Medications for{" "}
-                            {
-                              users.find((u) => u.id === selectedUser)
-                                ?.first_name
-                            }{" "}
-                            {
-                              users.find((u) => u.id === selectedUser)
-                                ?.last_name
-                            }
-                          </DialogTitle>
-                        </DialogHeader>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Medication Name</TableHead>
-                              <TableHead>Reminder Time</TableHead>
-                              <TableHead>Action</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {isLoading ? (
-                              // Show loader when isLoading is true
-                              <TableRow>
-                                <TableCell colSpan={3} className="text-center">
-                                  <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-                                </TableCell>
-                              </TableRow>
-                            ) : users.find((u) => u.id === selectedUser)
-                                ?.medications.length === 0 ? (
-                              // Show "No medications" when the medications array is empty
-                              <TableRow>
-                                <TableCell
-                                  colSpan={3}
-                                  className="text-center text-gray-500"
-                                >
-                                  No medications
-                                </TableCell>
-                              </TableRow>
-                            ) : (
-                              // Render medications when not loading and the array is not empty
-                              users
-                                .find((u) => u.id === selectedUser)
-                                ?.medications.map((medication: any) => (
-                                  <TableRow key={medication.id}>
-                                    <TableCell className="text-left">
-                                      {medication.medication_name}
-                                    </TableCell>
-                                    <TableCell className="text-left">
-                                      {medication.reminder_time.slice(0, -3)}{" "}
-                                      PST
-                                    </TableCell>
-                                    <TableCell>
-                                      <Button
-                                        variant="destructive"
-                                        className="bg-red-600 text-white"
-                                        size="sm"
-                                        onClick={() =>
-                                          onDeleteMedication(medication.id)
-                                        }
-                                        disabled={isLoading}
-                                      >
-                                        {isLoading ? (
-                                          <Loader2 className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                          "Delete"
-                                        )}
-                                      </Button>
-                                    </TableCell>
-                                  </TableRow>
-                                ))
-                            )}
-                          </TableBody>
-                        </Table>
-                      </DialogContent>
-                    </Dialog>
+                      Edit
+                    </Button>
                     <Button
                       className="bg-red-600 text-white h-[31px]"
                       variant="destructive"
@@ -483,6 +336,93 @@ export default function UsersPage() {
           )}
         </TableBody>
       </Table>
+      <Dialog open={isAddUserOpen} onOpenChange={(isOpen) => {
+            setIsAddUserOpen(isOpen);
+            if (!isOpen) {
+              console.log('emptyyyyy')
+              setIsEditingUser(null);
+              userForm.reset(); // Reset the form when the modal is closed
+            }
+          }}>
+        <DialogContent className="bg-white">
+          <DialogHeader>
+            <DialogTitle>
+              {isEditingUser ? "Edit User" : "Add New User"}
+            </DialogTitle>
+          </DialogHeader>
+          <Form {...userForm}>
+            <form
+              onSubmit={
+                isEditingUser
+                  ? userForm.handleSubmit(onEditUser)
+                  : userForm.handleSubmit(onAddUser)
+              }
+              className="space-y-4"
+            >
+              <FormField
+                control={userForm.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="w-full text-left">
+                      First Name
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={userForm.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={userForm.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="+1234567890" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={userForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isEditingUser ? "Save Changes" : "Add User"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+export default withAuth(UsersPage, ['admin']);
