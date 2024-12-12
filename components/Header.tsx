@@ -64,9 +64,11 @@ function Header() {
           </Link> */}
         </nav>
         <div className="flex items-center space-x-4">
-          {/* <Button variant="link" className="hidden md:inline-flex">
-            Sign In
-          </Button> */}
+          <Link href="https://calendly.com/phanig/30-minute">
+            <Button variant="default" className="hidden md:inline-flex">
+              Book a Demo
+            </Button>
+          </Link>
           {/* <Link href="/signup">
             <Button>Get Started</Button>
           </Link> */}
