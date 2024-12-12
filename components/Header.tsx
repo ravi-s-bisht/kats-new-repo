@@ -1,14 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import React from "react";
+import React, { useEffect } from "react";
 import Logo from "./dashboard/Header/logo";
 import { Button } from "./ui/button";
 import { usePathname } from "next/navigation";
+import { datadogRum } from "@datadog/browser-rum";
 
 function Header() {
   const pathname = usePathname();
   const isHomePage = pathname === "/";
+
+  useEffect(() => {
+    // log only to prod
+    if (window.location.href.startsWith("https://theavatarx.com")) {
+      datadogRum.init({
+        applicationId: "dbaa2039-c8bd-4987-bc11-54fb5d439c61",
+        clientToken: "pub2fa0567f4303efa5c2d39aaa30ae6861",
+        site: "us5.datadoghq.com",
+        service: "avatarx",
+        env: process.env.NEXT_PUBLIC_ENV, // Use a public environment variable
+        sessionSampleRate: 100,
+        sessionReplaySampleRate: 20,
+        trackUserInteractions: true,
+        trackResources: true,
+        trackLongTasks: true,
+        defaultPrivacyLevel: "mask-user-input",
+      });
+
+      datadogRum.startSessionReplayRecording();
+    }
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
