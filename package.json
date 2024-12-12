@@ -13,6 +13,7 @@
     "@azure/storage-blob": "^12.26.0",
     "@daily-co/daily-react": "^0.22.0",
     "@daily-co/realtime-ai-daily": "0.2.0",
+    "@datadog/browser-rum": "^5.33.0",
     "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.5",
     "@hookform/resolvers": "^3.9.1",
