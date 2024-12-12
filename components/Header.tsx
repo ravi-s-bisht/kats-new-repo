@@ -15,11 +15,15 @@ function Header() {
     // log only to prod
     if (window.location.href.startsWith("https://theavatarx.com")) {
       datadogRum.init({
-        applicationId: "dbaa2039-c8bd-4987-bc11-54fb5d439c61",
-        clientToken: "pub2fa0567f4303efa5c2d39aaa30ae6861",
+        applicationId: "ed5e4bb6-58d3-4528-8057-bd3fc6388530",
+        clientToken: "pubb81d9fa8c7da517899d3301893962664",
+        // `site` refers to the Datadog site parameter of your organization
+        // see https://docs.datadoghq.com/getting_started/site/
         site: "us5.datadoghq.com",
-        service: "avatarx",
-        env: process.env.NEXT_PUBLIC_ENV, // Use a public environment variable
+        service: "theavatarx.com",
+        env: "theavatarx.com",
+        // Specify a version number to identify the deployed version of your application in Datadog
+        // version: '1.0.0',
         sessionSampleRate: 100,
         sessionReplaySampleRate: 20,
         trackUserInteractions: true,
