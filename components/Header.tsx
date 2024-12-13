@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { usePathname } from "next/navigation";
 import { datadogRum } from "@datadog/browser-rum";
 import { useUser } from "@/src/contexts/UserContext";
+import { LogOut } from "lucide-react";
 
 function Header() {
   const pathname = usePathname();
@@ -95,11 +96,13 @@ function Header() {
           {/* <Button variant="link" className="hidden md:inline-flex">
             Sign In
           </Button> */}
-          {role != 'user' && <Link href="https://calendly.com/phanig/30-minute">
-            <Button variant="default" className="hidden md:inline-flex">
-              Book a Demo
-            </Button>
-          </Link>}
+          {role != "user" && (
+            <Link href="https://calendly.com/phanig/30-minute">
+              <Button variant="default" className="hidden md:inline-flex">
+                Book a Demo
+              </Button>
+            </Link>
+          )}
 
           {role == "admin" && user && pathname == "/" && (
             <Link href="/admin/dashboard/users">
@@ -113,7 +116,8 @@ function Header() {
           )}
           {user && role == "user" && (
             <Link href="/login" onClick={() => logout()}>
-              <Button variant="destructive" className="bg-red-500 text-white">
+              <Button variant="default">
+                <LogOut className="mr-2 h-4 w-4" color="white" />
                 Log out
               </Button>
             </Link>
