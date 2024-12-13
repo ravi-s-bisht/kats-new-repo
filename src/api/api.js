@@ -40,3 +40,6 @@ export const deleteUser = async (payload) => instance.delete('/users', { params:
 export const addMedication = async (payload) => instance.post('/medications', payload);
 export const deleteMedication = async (payload) => instance.delete('/medications', { data: payload });
 export const updateMedication = async (payload) => instance.put('/medications', payload);
+
+// Session Log
+export const addSessionLog = async (payload) => instance.post('/sessionlog', payload);

@@ -95,6 +95,11 @@ function Header() {
           {/* <Button variant="link" className="hidden md:inline-flex">
             Sign In
           </Button> */}
+          {role != 'user' && <Link href="https://calendly.com/phanig/30-minute">
+            <Button variant="default" className="hidden md:inline-flex">
+              Book a Demo
+            </Button>
+          </Link>}
 
           {role == "admin" && user && pathname == "/" && (
             <Link href="/admin/dashboard/users">
@@ -113,11 +118,6 @@ function Header() {
               </Button>
             </Link>
           )}
-          <Link href="https://calendly.com/phanig/30-minute">
-            <Button variant="default" className="hidden md:inline-flex">
-              Book a Demo
-            </Button>
-          </Link>
           {/* <Link href="/signup">
             <Button>Get Started</Button>
           </Link> */}

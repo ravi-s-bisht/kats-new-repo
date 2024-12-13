@@ -9,6 +9,8 @@ import {
   HUME_PRESET_CHARACTERS,
   VideoHumePresetCharacter,
 } from "@/components/hume/hume-configs";
+import { addSessionLog } from "@/src/api/api";
+import { useUser } from "@/src/contexts/UserContext";
 
 function VideoCallPage() {
   const { id } = useParams();
@@ -18,6 +20,7 @@ function VideoCallPage() {
   const timerRef = useRef<any>(null);
   const [avatar, setAvatar] = useState<any>(null);
   const firstTime = useRef(true);
+  const { user } = useUser();
 
   useEffect(() => {
     const avatar = HUME_PRESET_CHARACTERS.find(
@@ -29,7 +32,8 @@ function VideoCallPage() {
 
   const callVideo = async () => {
     const avatar = HUME_PRESET_CHARACTERS.find(
-      (character): character is VideoHumePresetCharacter => character.id === Number(id)
+      (character): character is VideoHumePresetCharacter =>
+        character.id === Number(id)
     );
 
     if (!avatar) {
@@ -56,6 +60,14 @@ function VideoCallPage() {
       });
 
       const response = await data.json();
+
+      // Add Session to database log
+      await addSessionLog({
+        type: "video",
+        user_id: user?.id,
+        avatar_id: 1
+      });
+
       console.log("response video", response);
       setTavusConversation(response);
 

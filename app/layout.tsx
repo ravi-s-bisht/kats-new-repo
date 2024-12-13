@@ -24,7 +24,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className + " " + `flex flex-col bg-white`}>
         <GoogleOAuthProvider
-          clientId={process.env.NEXT_PUBLIC_GOOGLE_LOGIN_API_KEY || ""}
+          clientId={process.env.GOOGLE_LOGIN_API_KEY || ""}
         >
           <UserProvider>
             <Header />
