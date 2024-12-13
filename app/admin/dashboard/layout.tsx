@@ -47,8 +47,11 @@ export default function DashboardLayout({
     }
 
     // Redirect non-admin users
-    if (storedRole !== "admin") {
+    if (storedRole == "user") {
       router.push("/avatars");
+    } else if (storedRole == "admin") return;
+    else {
+      logout();
     }
   }, [router]);
 
@@ -99,8 +102,8 @@ export default function DashboardLayout({
         </div>
         <div className="p-2 mt-auto">
           <Button
-            variant="ghost"
-            className="w-full justify-start bg-red-600 py-4 text-white"
+            variant="default"
+            className="w-full justify-start"
             onClick={handleLogout}
           >
             <LogOut className="mr-2 h-4 w-4" color="white" />
@@ -138,8 +141,8 @@ export default function DashboardLayout({
             </nav>
             <div className="p-2 mt-auto">
               <Button
-                variant="ghost"
-                className="w-full justify-start bg-red-600 text-white"
+                variant="default"
+                className="w-full justify-start"
                 onClick={handleLogout}
               >
                 <LogOut className="mr-2 h-4 w-4" color="white" />
@@ -152,15 +155,14 @@ export default function DashboardLayout({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="h-14 border-b flex items-center px-4">
+        {/* <header className="h-14 border-b flex items-center px-4">
           <Button variant="ghost" size="icon" className="md:hidden mr-2">
             <MenuIcon className="h-4 w-4" />
           </Button>
           <h1 className="text-lg font-semibold">Admin Dashboard</h1>
-        </header>
+        </header> */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
       </div>
     </div>
   );
 }
-
