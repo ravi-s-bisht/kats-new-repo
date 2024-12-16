@@ -50,7 +50,7 @@ type NewUser = {
   last_name: string;
   phone_number: string;
   email: string;
-}
+};
 
 // Mock data
 const mockUsers: User[] = [
@@ -118,9 +118,15 @@ function UsersPage() {
         phone_number: data.phone,
         email: data.email,
       };
-      
-      await createUser({...newUser, admin_id: user?.id});
+
+      await createUser({ ...newUser, admin_id: user?.id });
       fetchUsers();
+
+      toast({
+        title: "User added successfully!",
+        description:
+          "A confirmation email has been sent to the user's email address.",
+      });
 
       setIsAddUserOpen(false);
       userForm.reset();
@@ -141,7 +147,7 @@ function UsersPage() {
         last_name: data.lastName,
         phone_number: data.phone,
         email: data.email,
-      })
+      });
       fetchUsers();
       setIsAddUserOpen(false);
       setIsEditingUser(null);
@@ -290,12 +296,12 @@ function UsersPage() {
               <TableRow key={user.id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center">
-                    <Avatar className="h-8 w-8 mr-2">
+                    {/* <Avatar className="h-8 w-8 mr-2">
                       <AvatarFallback>
                         {user.first_name[0]}
                         {user.last_name[0]}
                       </AvatarFallback>
-                    </Avatar>
+                    </Avatar> */}
                     {user.first_name} {user.last_name}
                   </div>
                 </TableCell>
@@ -336,14 +342,17 @@ function UsersPage() {
           )}
         </TableBody>
       </Table>
-      <Dialog open={isAddUserOpen} onOpenChange={(isOpen) => {
-            setIsAddUserOpen(isOpen);
-            if (!isOpen) {
-              console.log('emptyyyyy')
-              setIsEditingUser(null);
-              userForm.reset(); // Reset the form when the modal is closed
-            }
-          }}>
+      <Dialog
+        open={isAddUserOpen}
+        onOpenChange={(isOpen) => {
+          setIsAddUserOpen(isOpen);
+          if (!isOpen) {
+            console.log("emptyyyyy");
+            setIsEditingUser(null);
+            userForm.reset(); // Reset the form when the modal is closed
+          }
+        }}
+      >
         <DialogContent className="bg-white">
           <DialogHeader>
             <DialogTitle>
@@ -425,4 +434,4 @@ function UsersPage() {
   );
 }
 
-export default withAuth(UsersPage, ['admin']);
+export default withAuth(UsersPage, ["admin"]);

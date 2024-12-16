@@ -1,3 +1,4 @@
+import nodemailer from "nodemailer";
 import { NextResponse } from "next/server";
 import db from "../db/connection";
 
@@ -117,6 +118,34 @@ export async function POST(req: Request) {
         branch_id: admin.branch_id,
       })
       .returning("*");
+
+    const transporter = nodemailer.createTransport({
+      service: "Gmail", // Use Gmail or any other service
+      auth: {
+        user: process.env.EMAIL_USER, // Your email address
+        pass: process.env.EMAIL_PASS, // Your app password
+      },
+    });
+
+    // const LOGIN_URL = "http://localhost:3000/login";
+    const LOGIN_URL = "https://vercel-temp-dep.vercel.app/login"
+    await transporter.sendMail({
+      from: `"AvatarX Team" <pg@avatarx.live>`, // Sender details
+      to: email, // Recipient email address
+      subject: "Welcome to AvatarX!",
+      html: `
+            <p>Hi ${first_name},</p>
+            <p>You've been added to <strong>AvatarX</strong>, your AI companion platform! 🎉</p>
+            <p>To get started, log in using your registered email address at the following link:</p>
+            <p><a href="${LOGIN_URL}" target="_blank">${LOGIN_URL}</a></p>
+            <p>If you have any questions or need assistance, feel free to reach out to your facility administrator.</p>
+            <br>
+            <p>Welcome aboard!</p>
+            <p><strong>The AvatarX Team</strong></p>
+            <hr>
+            <p style="font-size: 12px; color: gray;">This email may contain sensitive information. If you are not the intended recipient, please delete it immediately.</p>
+        `,
+    });
     return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
     return NextResponse.json(

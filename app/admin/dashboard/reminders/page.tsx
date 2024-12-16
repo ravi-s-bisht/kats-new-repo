@@ -39,6 +39,7 @@ import {
 } from "@/src/api/api";
 import { useUser } from "@/src/contexts/UserContext";
 import { withAuth } from "@/components/withAuth";
+import Link from "next/link";
 
 // Type definitions
 type Medication = {
@@ -195,8 +196,13 @@ function RemindersPage() {
           ) : users.length === 0 ? (
             // Show "No users" when the users array is empty
             <TableRow>
-              <TableCell colSpan={4} className="text-center text-gray-500">
-                No users
+              <TableCell colSpan={4} className="text-center text-gray-500 mt-7">
+                <div className="flex flex-col space-y-5 justify-center items-center">
+                  Please add users to start adding reminders. <br />
+                  <Link href="/admin/dashboard/users">
+                    <Button variant="default">Go to Users</Button>
+                  </Link>
+                </div>
               </TableCell>
             </TableRow>
           ) : (
@@ -204,12 +210,12 @@ function RemindersPage() {
               <TableRow key={user.id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center">
-                    <Avatar className="h-8 w-8 mr-2">
+                    {/* <Avatar className="h-8 w-8 mr-2">
                       <AvatarFallback>
                         {user.first_name[0]}
                         {user.last_name[0]}
                       </AvatarFallback>
-                    </Avatar>
+                    </Avatar> */}
                     {user.first_name} {user.last_name}
                   </div>
                 </TableCell>
@@ -425,4 +431,4 @@ function RemindersPage() {
   );
 }
 
-export default withAuth(RemindersPage, ['admin']);
+export default withAuth(RemindersPage, ["admin"]);
