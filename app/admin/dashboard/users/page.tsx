@@ -35,6 +35,7 @@ import { Loader2, Plus, Eye } from "lucide-react";
 import { useUser } from "@/src/contexts/UserContext";
 import { createUser, deleteUser, getUsers, updateUser } from "@/src/api/api";
 import { withAuth } from "@/components/withAuth";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 // Type definitions
 type User = {
@@ -80,7 +81,12 @@ const mockUsers: User[] = [
 const userSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  phone: z.string().regex(/^\+\d{9,15}$/, "Invalid phone number format"),
+  phone: z
+    .string()
+    .regex(
+      /^\+\d{1,3}\d{9,10}$/,
+      "Phone number must include a valid country code and 9-10 digits"
+    ),
   email: z.string().email("Invalid email address"),
 });
 
@@ -115,7 +121,7 @@ function UsersPage() {
       const newUser: NewUser = {
         first_name: data.firstName,
         last_name: data.lastName,
-        phone_number: data.phone,
+        phone_number: data.phone, // Add country code
         email: data.email,
       };
 
@@ -145,7 +151,7 @@ function UsersPage() {
         id: isEditingUser?.id,
         first_name: data.firstName,
         last_name: data.lastName,
-        phone_number: data.phone,
+        phone_number: data.phone, // Add country code
         email: data.email,
       });
       fetchUsers();
@@ -399,16 +405,41 @@ function UsersPage() {
               <FormField
                 control={userForm.control}
                 name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="+1234567890" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  // Extract the number without the country code
+                  const formattedPhone = field.value?.startsWith("+1")
+                    ? field.value.slice(2).trim()
+                    : field.value;
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center border border-input rounded-md px-3">
+                          <div className="flex items-center space-x-2 mr-2">
+                            <span className="text-sm text-muted-foreground">
+                              +1
+                            </span>
+                          </div>
+                          <Input
+                            {...field}
+                            value={formattedPhone} // Show phone without country code
+                            onChange={(e) => {
+                              // Handle input changes and add country code back for saving
+                              const newValue = e.target.value;
+                              field.onChange(`+1${newValue}`); // Save with country code
+                            }}
+                            placeholder="1234567890"
+                            className="border-none flex-1"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
+
               <FormField
                 control={userForm.control}
                 name="email"
