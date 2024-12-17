@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function SignInPage() {
   const router = useRouter();
-  const { setUser, role, setRole } = useUser();
+  const { setUser, role, setRole, logout } = useUser();
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -22,49 +22,48 @@ export default function SignInPage() {
     onSuccess: async (tokenResponse) => {
       try {
         setIsLoading(true);
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ token: tokenResponse.access_token }),
         });
 
         if (res.ok) {
           const data = await res.json();
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('role', data.role);
-          localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem("token", data.token);
           setUser(data.user);
           setRole(data.role);
           setIsLoading(false);
-          router.push(data.role === 'admin' ? '/admin/dashboard' : '/avatars');
+
+          router.push(data.role === "admin" ? "/admin/dashboard" : "/avatars");
         } else {
           const errorData = await res.json();
-          setLoginError(errorData.error || 'Login failed');
+          setLoginError(errorData.error || "Login failed");
           toast({
-            title: 'Login failed',
-            description: errorData.error || 'Login failed.',
-          })
+            title: "Login failed",
+            description: errorData.error || "Login failed.",
+          });
           setIsLoading(false);
         }
       } catch (error) {
-        console.error('Login error:', error);
-        setLoginError('An unexpected error occurred');
+        console.error("Login error:", error);
+        setLoginError("An unexpected error occurred");
         setIsLoading(false);
       }
     },
     onError: (error) => {
-      console.error('Google Login Failed:', error);
-      setLoginError('Google login failed. Please try again.');
+      console.error("Google Login Failed:", error);
+      setLoginError("Google login failed. Please try again.");
     },
   });
 
   useEffect(() => {
-    console.log('logging')
-    const token = localStorage.getItem('token');
-    if (token) {
-      router.push(role === 'admin' ? 'admin/dashboard' : '/avatars');
+    const rol = localStorage.getItem("token");
+
+    if (rol) {
+      router.push(rol == "admin" ? "/admin/dashboard" : "/avatars");
     }
   }, [router]);
 
@@ -77,11 +76,7 @@ export default function SignInPage() {
             Sign in to access your account
           </p>
         </div>
-        <Button
-          className="w-full"
-          onClick={() => login()}
-          disabled={isLoading}
-        >
+        <Button className="w-full" onClick={() => login()} disabled={isLoading}>
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (

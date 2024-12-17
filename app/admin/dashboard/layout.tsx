@@ -37,31 +37,11 @@ export default function DashboardLayout({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { logout, role } = useUser();
-
-  useEffect(() => {
-    const storedRole = role;
-
-    if (!storedRole) {
-      router.push("/login");
-    }
-
-    // Redirect non-admin users
-    if (storedRole == "user") {
-      router.push("/avatars");
-    } else if (storedRole == "admin") return;
-    else {
-      logout();
-    }
-  }, [router]);
+  const { logout } = useUser();
 
   const handleLogout = () => {
     logout();
   };
-
-  if (role !== "admin") {
-    return null; // or a loading spinner
-  }
 
   return (
     <div className="flex h-full overflow-hidden w-full fixed pt-[70px]">

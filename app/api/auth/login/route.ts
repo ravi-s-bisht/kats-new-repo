@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
-import db from '../../db/connection';
-import axios from 'axios';
+import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
+import db from "../../db/connection";
+import axios from "axios";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -22,70 +22,107 @@ export async function POST(req: Request) {
 
     const email = userInfo.data.email as string;
 
-    console.log('em: ', email)
-
-    const emailUser = await db('users').where({ email }).first();
-
-    console.log('emailUser: ', emailUser)
+    const emailUser = await db("users").where({ email }).first();
 
     if (emailUser) {
-      const jwtToken = jwt.sign({ email, role: emailUser.role }, JWT_SECRET, { expiresIn: '1h' });
-      return NextResponse.json({ token: jwtToken, role: emailUser.role, user: emailUser });
+      const jwtToken = jwt.sign({ email, role: emailUser.role, token, user: emailUser }, JWT_SECRET, {
+        expiresIn: "1h",
+      });
+      return NextResponse.json({
+        token: jwtToken,
+        role: emailUser.role,
+        user: emailUser,
+      });
     }
 
     // Check the email domain
-    const isPersonalEmail = ['gmail.com', 'yahoo.com', 'hotmail.com'].some(domain => email.endsWith(domain));
+    const isPersonalEmail = ["gmail.com", "yahoo.com", "hotmail.com"].some(
+      (domain) => email.endsWith(domain)
+    );
 
-    let role: 'user' | 'admin';
+    let role: "user" | "admin";
     if (isPersonalEmail) {
       // Check if the user exists in the database (mock implementation)
-      const userExists = await checkUserInDatabase(email, 'user');
+      const userExists = await checkUserInDatabase(email, "user");
       if (!userExists) {
         // Return response with error message
-        return NextResponse.json({ error: 'User not registered!' }, { status: 401 });
+        return NextResponse.json(
+          { error: "User not registered!" },
+          { status: 401 }
+        );
       }
-      role = 'user';
+      role = "user";
     } else {
       // Check if the email is in the admin table (mock implementation)
-      const adminExists = await checkUserInDatabase(email, 'admin');
+      const adminExists = await checkUserInDatabase(email, "admin");
       if (!adminExists) {
         // Register as a new admin (mock implementation)
-        const company = email.split('@')[1].split('.')[0];
+        const company = email.split("@")[1].split(".")[0];
         await registerNewAdmin(email, userInfo, company);
       }
-      role = 'admin';
+      role = "admin";
     }
 
-    const user = await db('users').where({ email, role }).first();
+    const user = await db("users").where({ email, role }).first();
 
     // Create a JWT token
-    const jwtToken = jwt.sign({ email, role }, JWT_SECRET, { expiresIn: '1h' });
+    const jwtToken = jwt.sign({ email, role, user }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
     return NextResponse.json({ token: jwtToken, role, user });
   } catch (error) {
-    console.error('Login error:', error);
-    return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
+    console.error("Login error:", error);
+    return NextResponse.json(
+      { error: "Authentication failed" },
+      { status: 401 }
+    );
   }
 }
 
 // Mock implementations of database checks
-async function checkUserInDatabase(email: string, role: string): Promise<boolean> {
+async function checkUserInDatabase(
+  email: string,
+  role: string
+): Promise<boolean> {
   // write knex query where email = email and role = role
-  const user = await db('users').where({ email, role }).first();
+  const user = await db("users").where({ email, role }).first();
 
   return user;
 }
 
-async function registerNewAdmin(email: string, userInfo: any, company: string): Promise<void> {  
+async function registerNewAdmin(
+  email: string,
+  userInfo: any,
+  company: string
+): Promise<void> {
   // write knex query to insert into facility table
-  const facility = await db('facility').where({ name: company }).first();
+  const facility = await db("facility").where({ name: company }).first();
   if (!facility) {
-    await db('facility').insert({ name: company });
-    const newFacility = await db('facility').insert({ name: company });
-    const newBranch = await db('branch').insert({ location: null, facility_id: newFacility[0] });
-    const newAdmin = await db('users').insert({ email, role: 'admin', first_name: userInfo.data.given_name, last_name: userInfo.data.family_name, branch_id: newBranch[0] });
+    await db("facility").insert({ name: company });
+    const newFacility = await db("facility").insert({ name: company });
+    const newBranch = await db("branch").insert({
+      location: null,
+      facility_id: newFacility[0],
+    });
+    const newAdmin = await db("users").insert({
+      email,
+      role: "admin",
+      first_name: userInfo.data.given_name,
+      last_name: userInfo.data.family_name,
+      branch_id: newBranch[0],
+    });
   } else {
-    const newBranch = await db('branch').insert({ location: null, facility_id: facility.id });
-    const newAdmin = await db('users').insert({ email, role: 'admin', first_name: userInfo.data.given_name, last_name: userInfo.data.family_name, branch_id: newBranch[0] });
+    const newBranch = await db("branch").insert({
+      location: null,
+      facility_id: facility.id,
+    });
+    const newAdmin = await db("users").insert({
+      email,
+      role: "admin",
+      first_name: userInfo.data.given_name,
+      last_name: userInfo.data.family_name,
+      branch_id: newBranch[0],
+    });
   }
 }
