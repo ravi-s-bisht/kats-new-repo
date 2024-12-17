@@ -311,7 +311,7 @@ function DashboardPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">ID</TableHead>
+                  {/* <TableHead className="w-[100px]">ID</TableHead> */}
                   <TableHead>Full Name</TableHead>
                   <TableHead>Medicine</TableHead>
                   {/* <TableHead>Time Set</TableHead> */}
@@ -320,13 +320,13 @@ function DashboardPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  Array(4)
+                  Array(3)
                     .fill(0)
                     .map((_, index) => (
                       <TableRow key={index}>
-                        <TableCell>
+                        {/* <TableCell>
                           <Skeleton className="h-4 w-8" />
-                        </TableCell>
+                        </TableCell> */}
                         <TableCell>
                           <Skeleton className="h-4 w-24" />
                         </TableCell>
@@ -344,9 +344,9 @@ function DashboardPage() {
                 ) : reminderHistory.length > 0 ? (
                   reminderHistory.map((reminder) => (
                     <TableRow key={reminder.id}>
-                      <TableCell className="font-medium text-left">
+                      {/* <TableCell className="font-medium text-left">
                         {reminder.id}
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell className="text-left">
                         {reminder.full_name}
                       </TableCell>
