@@ -35,7 +35,6 @@ import { Loader2, Plus, Eye } from "lucide-react";
 import { useUser } from "@/src/contexts/UserContext";
 import { createUser, deleteUser, getUsers, updateUser } from "@/src/api/api";
 import { withAuth } from "@/components/withAuth";
-import { PhoneInput } from "@/components/ui/phone-input";
 
 // Type definitions
 type User = {
