@@ -35,7 +35,7 @@ function VoiceAvatarsPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8">Avatars Demo</h1>
+      <h1 className="text-3xl font-bold mb-8">Avatars</h1>
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
         {/* <div className="relative sm:w-64">
           <Input
@@ -76,28 +76,32 @@ function VoiceAvatarsPage() {
               </div>
               {/* <CardDescription>{avatar.language}</CardDescription> */}
             </CardHeader>
-            <CardContent className="flex-grow">
-              <div className="flex justify-center items-center">
-                <Image
-                  src={avatar.imageUrl}
-                  alt={avatar.name}
-                  className="rounded-full mb-5"
-                  width={150}
-                  height={150}
-                  priority
-                />
+            <CardContent className="flex flex-col h-full justify-between items-center">
+              <div className="flex flex-col">
+                <div className="flex justify-center items-center">
+                  <Image
+                    src={avatar.imageUrl}
+                    alt={avatar.name}
+                    className="rounded-full mb-5"
+                    width={150}
+                    height={150}
+                    priority
+                  />
+                </div>
+                <p className="mb-4">{avatar.description}</p>
               </div>
-              <p className="mb-4">{avatar.description}</p>
-              <Link href={`/avatars/${avatar.type}/${avatar.id}`}>
-                <Button className="w-full">
-                  {avatar.type == "voice" ? (
-                    <Phone className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Video className="mr-2 h-4 w-4" color="white" />
-                  )}{" "}
-                  {avatar.type == "voice" ? "Voice" : "Video"} Call
-                </Button>
-              </Link>
+              <div className="flex w-full">
+                <Link href={`/avatars/${avatar.type}/${avatar.id}`} className="w-full">
+                  <Button className="w-full">
+                    {avatar.type == "voice" ? (
+                      <Phone className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Video className="mr-2 h-4 w-4" color="white" />
+                    )}{" "}
+                    {avatar.type == "voice" ? "Voice" : "Video"} Call
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -106,4 +110,4 @@ function VoiceAvatarsPage() {
   );
 }
 
-export default withAuth(VoiceAvatarsPage, ['user', 'admin']);
+export default withAuth(VoiceAvatarsPage, ["user", "admin"]);
