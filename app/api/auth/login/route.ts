@@ -99,7 +99,6 @@ async function registerNewAdmin(
   // write knex query to insert into facility table
   const facility = await db("facility").where({ name: company }).first();
   if (!facility) {
-    await db("facility").insert({ name: company });
     const newFacility = await db("facility").insert({ name: company });
     const newBranch = await db("branch").insert({
       location: null,
