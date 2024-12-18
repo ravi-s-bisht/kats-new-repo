@@ -128,7 +128,8 @@ export async function POST(req: Request) {
     });
 
     // const LOGIN_URL = "http://localhost:3000/login";
-    const LOGIN_URL = "https://vercel-temp-dep.vercel.app/login"
+    const BASE_URL = process.env.BASE_URL
+    const LOGIN_URL = `${BASE_URL}/login`
     await transporter.sendMail({
       from: `"AvatarX Team" <pg@avatarx.live>`, // Sender details
       to: email, // Recipient email address
