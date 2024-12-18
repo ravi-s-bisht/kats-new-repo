@@ -23,7 +23,7 @@ exports.up = async function (knex) {
         table.increments("id").primary();
         table.string("first_name", 255);
         table.string("last_name", 255);
-        table.string("phone_number", 255).notNullable();
+        table.string("phone_number", 255).nullable();
         table.string("email", 255).notNullable();
         table.enu("role", ["admin", "facility", "user"]).notNullable();
         table
@@ -73,15 +73,15 @@ exports.up = async function (knex) {
             .unsigned()
             .references("id")
             .inTable("Users")
-            .onDelete("SET NULL");
+            .onDelete("CASCADE");
         table
             .integer("avatar_id")
             .unsigned()
             .references("id")
             .inTable("Avatar")
             .onDelete("SET NULL");
-        table.datetime("start_time").notNullable();
-        table.datetime("end_time").notNullable();
+        table.datetime("start_time").nullable();
+        table.datetime("end_time").nullable();
     });
 };
 
