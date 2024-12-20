@@ -10,6 +10,7 @@ import { LoggedInUserContext } from "@/src/contexts/LoggedInUserContext";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/src/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -61,15 +62,16 @@ export default function SignInPage() {
 
   useEffect(() => {
     const rol = localStorage.getItem("token");
+    const userRole = localStorage.getItem("role");
 
     if (rol) {
-      router.push(rol == "admin" ? "/admin/dashboard" : "/avatars");
+      router.push(userRole == "admin" ? "/admin/dashboard" : "/avatars");
     }
   }, [router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background w-full">
-      <div className="w-full max-w-md space-y-8 p-8 bg-card rounded-xl shadow-lg mb-16">
+      <div className="w-full max-w-md space-y-6 p-8 bg-card rounded-xl shadow-lg mb-16">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-bold">Welcome to AvatarX</h2>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -90,6 +92,26 @@ export default function SignInPage() {
           )}
           Sign in with Google
         </Button>
+        <Link href="/api/auth/microsoft">
+          <Button
+            className="w-full mt-4"
+            onClick={() => console.log("Microsoft login clicked")}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Image
+                src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg"
+                alt="Microsoft"
+                width={20}
+                height={20}
+                className="h-5 w-5 mr-2"
+              />
+            )}
+            Sign in with Microsoft
+          </Button>
+        </Link>
       </div>
     </div>
   );

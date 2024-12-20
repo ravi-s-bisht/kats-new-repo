@@ -111,7 +111,7 @@ function Header() {
           )}
 
           {role == "admin" && user && pathname == "/" && (
-            <Link href="/admin/dashboard/users">
+            <Link href="/admin/dashboard">
               <Button variant="outline">Go to Dashboard</Button>
             </Link>
           )}

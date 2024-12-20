@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import db from "../../db/connection";
 import axios from "axios";
+import { registerNewAdmin } from "@/utils/dbHelpers";
+import { checkUserInDatabase } from "@/utils/dbHelpers";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -26,7 +28,7 @@ export async function POST(req: Request) {
 
     if (emailUser) {
       const jwtToken = jwt.sign({ email, role: emailUser.role, token, user: emailUser }, JWT_SECRET, {
-        expiresIn: "1h",
+        expiresIn: "7d",
       });
       return NextResponse.json({
         token: jwtToken,
@@ -67,7 +69,7 @@ export async function POST(req: Request) {
 
     // Create a JWT token
     const jwtToken = jwt.sign({ email, role, user }, JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: "7d",
     });
 
     return NextResponse.json({ token: jwtToken, role, user });
@@ -77,51 +79,5 @@ export async function POST(req: Request) {
       { error: "Authentication failed" },
       { status: 401 }
     );
-  }
-}
-
-// Mock implementations of database checks
-async function checkUserInDatabase(
-  email: string,
-  role: string
-): Promise<boolean> {
-  // write knex query where email = email and role = role
-  const user = await db("users").where({ email, role }).first();
-
-  return user;
-}
-
-async function registerNewAdmin(
-  email: string,
-  userInfo: any,
-  company: string
-): Promise<void> {
-  // write knex query to insert into facility table
-  const facility = await db("facility").where({ name: company }).first();
-  if (!facility) {
-    const newFacility = await db("facility").insert({ name: company });
-    const newBranch = await db("branch").insert({
-      location: null,
-      facility_id: newFacility[0],
-    });
-    const newAdmin = await db("users").insert({
-      email,
-      role: "admin",
-      first_name: userInfo.data.given_name,
-      last_name: userInfo.data.family_name,
-      branch_id: newBranch[0],
-    });
-  } else {
-    const newBranch = await db("branch").insert({
-      location: null,
-      facility_id: facility.id,
-    });
-    const newAdmin = await db("users").insert({
-      email,
-      role: "admin",
-      first_name: userInfo.data.given_name,
-      last_name: userInfo.data.family_name,
-      branch_id: newBranch[0],
-    });
   }
 }
