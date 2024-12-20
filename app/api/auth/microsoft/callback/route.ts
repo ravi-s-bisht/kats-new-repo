@@ -30,14 +30,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const code = searchParams.get("code");
 
   if (!code) {
-    return NextResponse.json(
-      { error: "Authorization code is missing" },
-      { status: 400 }
+    return NextResponse.redirect(
+      `${process.env.BASE_URL}/microsoft-signin-callback?error=Authorization code is missing`
     );
   }
 
   try {
-    // Exchange code for access token
+    // Exchange authorization code for an access token
     const tokenResponse = await axios.post<TokenResponse>(
       "https://login.microsoftonline.com/common/oauth2/v2.0/token",
       new URLSearchParams({
@@ -72,7 +71,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     console.log("USER INFORRRRR: ", userInfo);
 
-    const email = userInfo.data.email as string;
+    const email = userInfo.data.email;
+
+    if (!email) {
+      throw new Error("Unable to retrieve email from Microsoft response.");
+    }
 
     const emailUser = await db("users").where({ email }).first();
 
@@ -80,9 +83,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       const jwtToken = jwt.sign(
         { email, role: emailUser.role, token: code, user: emailUser },
         JWT_SECRET,
-        {
-          expiresIn: "7d",
-        }
+        { expiresIn: "7d" }
       );
 
       return NextResponse.redirect(
@@ -90,28 +91,23 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Check the email domain
+    // Check if email is personal
     const isPersonalEmail = ["gmail.com", "yahoo.com", "hotmail.com"].some(
       (domain) => email.endsWith(domain)
     );
 
     let role: "user" | "admin";
     if (isPersonalEmail) {
-      // Check if the user exists in the database (mock implementation)
       const userExists = await checkUserInDatabase(email, "user");
       if (!userExists) {
-        // Return response with error message
-        return NextResponse.json(
-          { error: "User not registered!" },
-          { status: 401 }
+        return NextResponse.redirect(
+          `${process.env.BASE_URL}/microsoft-signin-callback?error=User is not registered`
         );
       }
       role = "user";
     } else {
-      // Check if the email is in the admin table (mock implementation)
       const adminExists = await checkUserInDatabase(email, "admin");
       if (!adminExists) {
-        // Register as a new admin (mock implementation)
         const company = email.split("@")[1].split(".")[0];
         await registerNewAdmin(email, userInfo, company);
       }
@@ -119,6 +115,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     const user = await db("users").where({ email, role }).first();
+    if (!user) {
+      throw new Error(`Failed to fetch user with role: ${role}.`);
+    }
 
     // Create a JWT token
     const jwtToken = jwt.sign({ email, role, user }, JWT_SECRET, {
@@ -128,10 +127,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(
       `${process.env.BASE_URL}/microsoft-signin-callback?token=${jwtToken}`
     );
-  } catch (error) {
-    console.error("Login error:", error);
+  } catch (error: unknown) {
+    console.error("Authentication error:", error);
+
+    // Extract error message for better user feedback
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred.";
+
     return NextResponse.redirect(
-      `${process.env.BASE_URL}/microsoft-signin-callback?error=Authentication failed`
+      `${
+        process.env.BASE_URL
+      }/microsoft-signin-callback?error=${encodeURIComponent(errorMessage)}`
     );
   }
 }
