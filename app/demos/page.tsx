@@ -35,6 +35,12 @@ export default function VoiceAvatarsPage() {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-8">Avatars Demo</h1>
+      <Link href="/demos/medical-checkin">
+        <Button className="w-max-[500px]">
+          <Video className="mr-2 h-4 w-4" />
+          Medical Check-in
+        </Button>
+      </Link>
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
         {/* <div className="relative sm:w-64">
           <Input
