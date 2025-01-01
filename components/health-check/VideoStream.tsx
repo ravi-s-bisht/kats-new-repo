@@ -147,9 +147,9 @@ export default function VideoStream({ onStreamStart, onComplete }: VideoStreamPr
               variant="destructive"
               size="icon"
               onClick={stopVideo}
-              className="rounded-full"
+              className="rounded-full bg-red-500"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 rounded-full" color="white" />
             </Button>
           </div>
         )}
