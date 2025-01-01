@@ -41,9 +41,9 @@ export default function StepProgress({ steps, currentStep }: StepProgressProps) 
             >
               <motion.div
                 className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200",
+                  "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300",
                   isComplete || isCurrent
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-primary text-primary-foreground scale-110"
                     : "bg-gray-200 text-gray-400"
                 )}
                 whileHover={{ scale: 1.1 }}
@@ -53,7 +53,7 @@ export default function StepProgress({ steps, currentStep }: StepProgressProps) 
               </motion.div>
               <motion.span
                 className={cn(
-                  "mt-2 text-sm font-medium",
+                  "mt-2 text-sm font-medium transition-colors duration-300",
                   isComplete || isCurrent ? "text-primary" : "text-gray-500"
                 )}
                 initial={{ opacity: 0 }}
