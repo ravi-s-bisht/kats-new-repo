@@ -6,6 +6,7 @@ import { LoggedInUserContextProvider } from "@/src/contexts/LoggedInUserContext"
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { UserProvider } from "@/src/contexts/UserContext";
 import { Toaster } from "@/components/ui/toaster";
+import { AnalysisProvider } from "@/lib/context";
 // import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] });
@@ -23,12 +24,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className + " " + `flex flex-col bg-white`}>
-        <GoogleOAuthProvider
-          clientId={process.env.GOOGLE_LOGIN_API_KEY || ""}
-        >
+        <GoogleOAuthProvider clientId={process.env.GOOGLE_LOGIN_API_KEY || ""}>
           <UserProvider>
-            <Header />
-            {children}
+            <AnalysisProvider>
+              <Header />
+              {children}
+            </AnalysisProvider>
             <Toaster />
           </UserProvider>
         </GoogleOAuthProvider>

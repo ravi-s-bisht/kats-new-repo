@@ -25,7 +25,7 @@ export default function VideoStream({ onStreamStart, onComplete }: VideoStreamPr
       onStreamStart(null);
     }
     if (timerRef.current) {
-      clearTimeout(timerRef.current);
+      clearInterval(timerRef.current);
     }
     setTimeLeft(null);
   };
@@ -47,7 +47,7 @@ export default function VideoStream({ onStreamStart, onComplete }: VideoStreamPr
           height: { ideal: 720 },
           facingMode: "user"
         },
-        audio: true // Enable audio capture
+        audio: true
       });
 
       console.log('Camera and microphone access granted');
@@ -56,9 +56,28 @@ export default function VideoStream({ onStreamStart, onComplete }: VideoStreamPr
         videoRef.current.srcObject = stream;
         onStreamStart(stream);
 
+        // Start the timer when video starts playing
         videoRef.current.onplaying = () => {
           console.log('Video started playing, starting timer');
           setTimeLeft(30);
+
+          // Clear any existing timer
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+          }
+
+          // Set up new timer
+          timerRef.current = setInterval(() => {
+            setTimeLeft((prev) => {
+              if (prev === null || prev <= 0) {
+                if (timerRef.current) {
+                  clearInterval(timerRef.current);
+                }
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
         };
       }
     } catch (error) {
@@ -87,16 +106,6 @@ export default function VideoStream({ onStreamStart, onComplete }: VideoStreamPr
       onComplete?.();
       return;
     }
-
-    timerRef.current = setTimeout(() => {
-      setTimeLeft(prev => prev !== null ? prev - 1 : null);
-    }, 1000);
-
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    };
   }, [timeLeft, onComplete]);
 
   useEffect(() => {
@@ -118,7 +127,7 @@ export default function VideoStream({ onStreamStart, onComplete }: VideoStreamPr
         </div>
       )}
 
-      <Card className="overflow-hidden bg-gray-900 aspect-video relative">
+      <Card className="overflow-hidden bg-gray-900 h-full relative">
         <video
           ref={videoRef}
           autoPlay
@@ -147,9 +156,9 @@ export default function VideoStream({ onStreamStart, onComplete }: VideoStreamPr
               variant="destructive"
               size="icon"
               onClick={stopVideo}
-              className="rounded-full bg-red-500"
+              className="rounded-full"
             >
-              <X className="h-4 w-4 rounded-full" color="white" />
+              <X className="h-4 w-4" />
             </Button>
           </div>
         )}

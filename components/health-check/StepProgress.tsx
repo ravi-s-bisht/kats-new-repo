@@ -13,14 +13,19 @@ interface StepProgressProps {
   currentStep: number;
 }
 
-export default function StepProgress({ steps, currentStep }: StepProgressProps) {
+export default function StepProgress({
+  steps,
+  currentStep,
+}: StepProgressProps) {
   return (
     <div className="relative">
       <div className="absolute top-5 left-6 right-6 h-0.5 bg-gray-200">
         <motion.div
           className="absolute h-full bg-primary"
           initial={{ width: "0%" }}
-          animate={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+          animate={{
+            width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
+          }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
         />
       </div>
