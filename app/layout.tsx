@@ -6,7 +6,7 @@ import { LoggedInUserContextProvider } from "@/src/contexts/LoggedInUserContext"
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { UserProvider } from "@/src/contexts/UserContext";
 import { Toaster } from "@/components/ui/toaster";
-import { AnalysisProvider } from "@/lib/context";
+import { AnalysisProvider } from "@/src/lib/context";
 // import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] });

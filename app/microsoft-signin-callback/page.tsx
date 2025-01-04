@@ -34,7 +34,11 @@ export default function MicrosoftCallbackHandler() {
             setUser(user);
             setRole(role);
 
-            router.push(role == "admin" ? "/admin/dashboard" : "/avatars");
+            const analysisData = localStorage.getItem('analysisData')
+            if(analysisData)
+              router.push('/demos/medical-checkin')
+            else
+              router.push(role == "admin" ? "/admin/dashboard" : "/avatars");
           } else {
             const { error } = await response.json();
             throw new Error(error || "Failed to verify token.");
