@@ -105,7 +105,7 @@ export default function AuthPrompt({ onAuthSuccess }: AuthPromptProps) {
           )}
           Sign in with Google
         </Button>
-        <Link href="/api/auth/microsoft">
+        {/* <Link href="/api/auth/microsoft">
           <Button
             className="w-full mt-4"
             onClick={() => {
@@ -127,7 +127,7 @@ export default function AuthPrompt({ onAuthSuccess }: AuthPromptProps) {
             )}
             Sign in with Microsoft
           </Button>
-        </Link>
+        </Link> */}
         </CardContent>
       </Card>
     </div>
