@@ -37,6 +37,11 @@ const nextConfig = {
       };
     }
 
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      fs: false, // Disable 'fs' for browser builds
+    };
+
     return config;
   },
 };

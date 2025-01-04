@@ -144,7 +144,7 @@ export default function Home() {
                       Analysis Complete
                     </h2>
                     <p className="text-sm sm:text-base text-gray-600 mb-6">
-                      Here's your comprehensive health analysis. Our AI-powered system has analyzed your vital signs and health indicators.
+                      Here{"\'"}s your comprehensive health analysis. Our AI-powered system has analyzed your vital signs and health indicators.
                     </p>
                   </div>
 
