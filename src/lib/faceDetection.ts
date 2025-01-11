@@ -1,4 +1,4 @@
-import * as faceapi from 'face-api.js';
+import * as faceapi from '@vladmandic/face-api';
 
 let modelsLoaded = false;
 let loadingPromise: Promise<void> | null = null;
@@ -9,17 +9,78 @@ export async function loadFaceDetectionModels() {
 
   loadingPromise = (async () => {
     try {
-      console.log('Starting to load face detection models...');
-      // Load TinyFaceDetector first as it's the primary model we need
-      await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-      await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-      console.log('Face detection models loaded successfully');
+      console.log('Starting to load face detection models from:', '/models');
+
+      const modelPath = '/models';
+      const requiredModels = [
+        'tiny_face_detector_model-weights_manifest.json',
+        'tiny_face_detector_model.bin',
+        'face_landmark_68_model-weights_manifest.json',
+        'face_landmark_68_model.bin'
+      ];
+
+      // Create models directory if it doesn't exist
+      try {
+        await fetch(`${modelPath}/tiny_face_detector_model-weights_manifest.json`, { method: 'HEAD' });
+      } catch (error) {
+        console.warn('Models directory not found, will attempt to create from package');
+
+        // Models will be loaded from the package's default location
+        await faceapi.nets.tinyFaceDetector.load('/');
+        await faceapi.nets.faceLandmark68Net.load('/');
+
+        console.log('Models loaded from package default location');
+        modelsLoaded = true;
+        return;
+      }
+
+      // If models directory exists, verify files
+      console.log('Models directory found, verifying files...');
+      for (const model of requiredModels) {
+        try {
+          const response = await fetch(`${modelPath}/${model}`);
+          if (!response.ok) {
+            throw new Error(`Model file ${model} not accessible`);
+          }
+          console.log(`✓ Verified model file: ${model}`);
+        } catch (error) {
+          console.error(`Error verifying model ${model}:`, error);
+          throw new Error(`Failed to access model file: ${model}`);
+        }
+      }
+
+      // Load models sequentially with retries
+      const loadModel = async (modelLoader: () => Promise<void>, name: string, retries = 3) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            await modelLoader();
+            console.log(`✓ Loaded ${name} successfully`);
+            return;
+          } catch (error) {
+            console.error(`Attempt ${i + 1}/${retries} failed to load ${name}:`, error);
+            if (i === retries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait before retry
+          }
+        }
+      };
+
+      await loadModel(
+        () => faceapi.nets.tinyFaceDetector.loadFromUri(modelPath),
+        'TinyFaceDetector'
+      );
+
+      await loadModel(
+        () => faceapi.nets.faceLandmark68Net.loadFromUri(modelPath),
+        'FaceLandmark68'
+      );
+
+      console.log('All face detection models loaded successfully');
       modelsLoaded = true;
     } catch (error) {
       console.error('Error loading face detection models:', error);
       modelsLoaded = false;
       loadingPromise = null;
-      throw error;
+      throw new Error(`Failed to load face detection models: ${error}`);
     }
   })();
 
@@ -27,32 +88,35 @@ export async function loadFaceDetectionModels() {
 }
 
 export async function detectFace(video: HTMLVideoElement) {
-  if (!modelsLoaded) {
-    try {
-      console.log('Models not loaded, attempting to load...');
-      await loadFaceDetectionModels();
-    } catch (error) {
-      console.error('Face detection initialization failed:', error);
-      return undefined;
-    }
-  }
-
   try {
-    console.log('Attempting face detection...');
-    const detection = await faceapi.detectSingleFace(
-      video,
-      new faceapi.TinyFaceDetectorOptions()
-    ).withFaceLandmarks();
+    if (!modelsLoaded) {
+      console.log('Face detection models not loaded, attempting to load...');
+      await loadFaceDetectionModels();
+    }
+
+    // Configure face detector options for better performance
+    const options = new faceapi.TinyFaceDetectorOptions({
+      inputSize: 416, // Good balance between speed and accuracy
+      scoreThreshold: 0.5
+    });
+
+    console.log('Starting face detection...');
+    const detection = await faceapi.detectSingleFace(video, options)
+      .withFaceLandmarks();
 
     if (detection) {
-      console.log('Face detected successfully');
+      console.log('Face detected:', {
+        position: detection.detection.box,
+        score: detection.detection.score,
+        landmarks: detection.landmarks.positions.length
+      });
+      return detection;
     } else {
       console.log('No face detected in frame');
+      return undefined;
     }
-
-    return detection;
   } catch (error) {
-    console.error('Face detection failed:', error);
+    console.error('Error in face detection:', error);
     return undefined;
   }
 }
@@ -72,17 +136,17 @@ export function isFaceWellPositioned(
   const centerX = box.x + box.width / 2;
   const centerY = box.y + box.height / 2;
 
-  // Define target zones (matching the larger frame)
+  // Define target zones
   const targetCenterX = videoWidth * 0.5;
   const targetCenterY = videoHeight * 0.45;
-  const targetWidth = videoWidth * 0.5;  
-  const targetHeight = videoHeight * 0.75;  // Increased to match new frame height
+  const targetWidth = videoWidth * 0.5;
+  const targetHeight = videoHeight * 0.75;
 
   // Calculate face size ratio relative to target
   const widthRatio = box.width / targetWidth;
   const heightRatio = box.height / targetHeight;
 
-  // Check if face is centered within the target zone with adaptive margins
+  // Check if face is centered with adaptive margins
   const horizontalMargin = targetWidth * 0.25 * (1 + Math.abs(1 - widthRatio));
   const verticalMargin = targetHeight * 0.25 * (1 + Math.abs(1 - heightRatio));
 
@@ -90,20 +154,16 @@ export function isFaceWellPositioned(
   const isVerticallyCentered = Math.abs(centerY - targetCenterY) < verticalMargin;
 
   // Check if face is the right size
-  const isRightSize = 
-    widthRatio >= 0.5 &&  // Minimum ratio
-    widthRatio <= 0.9 &&  // Maximum ratio
-    heightRatio >= 0.5 && 
-    heightRatio <= 0.9;
+  const isRightSize = widthRatio >= 0.5 && widthRatio <= 0.9 && heightRatio >= 0.5 && heightRatio <= 0.9;
 
-  // Check face rotation using landmarks with slightly relaxed thresholds
+  // Check face rotation using landmarks
   const rotation = calculateFaceRotation(landmarks);
   const isLookingForward = 
     Math.abs(rotation.pitch) < 20 && 
     Math.abs(rotation.yaw) < 20 && 
     Math.abs(rotation.roll) < 20;
 
-  console.log('Face position:', { 
+  console.log('Face position analysis:', {
     isHorizontallyCentered,
     isVerticallyCentered,
     isRightSize,
@@ -126,11 +186,11 @@ function calculateFaceRotation(landmarks: faceapi.FaceLandmarks68) {
   const leftMouth = points[48];
   const rightMouth = points[54];
 
-  // Calculate rotation angles with improved accuracy
+  // Calculate rotation angles
   const eyeSlope = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x) * (180 / Math.PI);
   const mouthSlope = Math.atan2(rightMouth.y - leftMouth.y, rightMouth.x - leftMouth.x) * (180 / Math.PI);
 
-  // Estimate head rotation with weighted calculations
+  // Estimate head rotation
   const yaw = (rightEye.x - leftEye.x) / (rightMouth.x - leftMouth.x) * 45 - 45;
   const pitch = (noseTip.y - ((leftEye.y + rightEye.y) / 2)) / 
                 ((leftMouth.y + rightMouth.y) / 2 - ((leftEye.y + rightEye.y) / 2)) * 45 - 22.5;

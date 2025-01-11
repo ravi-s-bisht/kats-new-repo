@@ -42,6 +42,11 @@ const nextConfig = {
       fs: false, // Disable 'fs' for browser builds
     };
 
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      util: false, // Prevents Next.js from bundling Node.js `util`
+    };
+
     return config;
   },
 };

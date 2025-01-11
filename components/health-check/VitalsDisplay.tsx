@@ -1,3 +1,5 @@
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/src/lib/utils";
 import { Heart, Activity, LineChart, Droplet, Loader2 } from "lucide-react";
@@ -79,7 +81,7 @@ export default function VitalsDisplay({ data, isLoading = false }: VitalsDisplay
     const [systolic, diastolic] = bp.split('/').map(Number);
     if (systolic < 120 && diastolic < 80) return "text-green-600";
     if (systolic < 130 && diastolic < 80) return "text-yellow-600";
-    return "text-red-600";
+    return "text-gray-200";
   };
 
   // Helper function to determine heart rate status color
@@ -199,14 +201,13 @@ export default function VitalsDisplay({ data, isLoading = false }: VitalsDisplay
                     transition={{ duration: 0.2 }}
                     className={cn(
                       "text-2xl sm:text-3xl font-semibold mt-2 sm:mt-3",
-                      getDepressionColor(data?.depressionProbability || "--")
+                      // getDepressionColor(data?.depressionProbability || "--")
                     )}
                   >
-                    Coming soon
-                    {/* {data?.depressionProbability !== undefined && data?.depressionProbability !== "--" ? `${data.depressionProbability}%` : "--"} */}
+                    {data?.depressionProbability !== undefined && data?.depressionProbability !== "--" ? `Coming Soon` : "Coming Soon"}
                   </motion.dd>
                 </AnimatePresence>
-                <div className="mt-3 sm:mt-4 bg-gray-200 rounded-full h-1.5 sm:h-2 overflow-hidden">
+                {/* <div className="mt-3 sm:mt-4 bg-gray-200 rounded-full h-1.5 sm:h-2 overflow-hidden">
                   <div 
                     className={cn(
                       "h-full rounded-full transition-all duration-500 ease-in-out",
@@ -214,8 +215,8 @@ export default function VitalsDisplay({ data, isLoading = false }: VitalsDisplay
                     )}
                     style={{ width: typeof data?.depressionProbability === 'number' ? `${data.depressionProbability}%` : '0%' }}
                   />
-                </div>
-                <motion.p 
+                </div> */}
+                {/* <motion.p 
                   className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-gray-600"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -227,7 +228,7 @@ export default function VitalsDisplay({ data, isLoading = false }: VitalsDisplay
                       : Number(data.depressionProbability) < 70
                       ? "Moderate risk of depression"
                       : "High risk of depression"}
-                </motion.p>
+                </motion.p> */}
               </div>
             </div>
           </CardContent>

@@ -1,181 +1,399 @@
-import { cn } from "@/src/lib/utils";
+'use client';
+
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Camera, AlertCircle, Loader2, X } from "lucide-react";
-import { detectFace, loadFaceDetectionModels, isFaceWellPositioned } from "@/src/lib/faceDetection";
+import { detectFace, isFaceWellPositioned, loadFaceDetectionModels } from "@/src/lib/faceDetection";
 import { HeartRateDetector } from "@/src/lib/heartRateDetection";
 import { BloodPressureEstimator } from "@/src/lib/bloodPressureEstimation";
+import { VitalMeasurements } from "@/src/lib/vitalMeasurements";
+import { motion } from "framer-motion";
+import { AverageFinalReport } from "./VideoCheckIn";
 
 interface VideoStreamProps {
   onStreamStart: (stream: MediaStream | null) => void;
-  onComplete?: () => void;
+  onComplete?: (finalReport: AverageFinalReport) => void;
   onVitalsUpdate?: (vitals: {
     heartRate: number;
     bloodPressure: string;
     hrv: number;
     bloodGlucose: number;
+    heartRateHistory: number[];
   }) => void;
   onCancel?: () => void;
 }
 
-export default function VideoStream({ onStreamStart, onComplete, onVitalsUpdate, onCancel }: VideoStreamProps) {
+export default function VideoStream({
+  onStreamStart,
+  onComplete,
+  onVitalsUpdate,
+  onCancel,
+}: VideoStreamProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+  const debugCanvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
   const heartRateDetectorRef = useRef<HeartRateDetector>();
   const bloodPressureEstimatorRef = useRef<BloodPressureEstimator>();
+  const frameTimeRef = useRef<number>(0);
+  const frameCountRef = useRef<number>(0);
+  const lastFpsUpdateRef = useRef<number>(0);
+  const [fps, setFps] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [progress, setProgress] = useState<number>(0);
   const [isFaceAligned, setIsFaceAligned] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
   const [isModelLoading, setIsModelLoading] = useState(true);
+  const lastBPUpdateRef = useRef<number>(0);
+  const vitalMeasurementsRef = useRef<VitalMeasurements>(new VitalMeasurements());
+  let faceDetection: any;
 
-  // Load face detection models on component mount
-  useEffect(() => {
-    loadFaceDetectionModels()
-      .then(() => {
-        console.log('Face detection models loaded successfully');
-        setIsModelLoading(false);
-        // Start video stream automatically once models are loaded
-        startVideo();
-      })
-      .catch((error) => {
-        console.error('Error loading face detection models:', error);
-        setError('Failed to load face detection models. Please refresh the page.');
-        setIsModelLoading(false);
-      });
+  const [conditions, setConditions] = useState({
+    isStable: true,
+    hasFace: false,
+    hasGoodLighting: true,
+    isWellPositioned: false
+  });
 
-    // Cleanup function to ensure camera and resources are properly released
-    return () => {
-      console.log('Cleaning up video resources...');
-      stopVideo();
-    };
-  }, []);
+  const [lastFrameData, setLastFrameData] = useState<ImageData | null>(null);
 
-  const drawFaceGuidance = (canvas: HTMLCanvasElement, videoWidth: number, videoHeight: number) => {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  const checkDeviceStability = (currentFrame: ImageData, previousFrame: ImageData | null): boolean => {
+    if (!previousFrame) return true;
 
-    // Clear previous drawing
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const threshold = 30; // Adjust sensitivity
+    const pixelDiffThreshold = 0.1; // Percentage of pixels that can be different
+    let differentPixels = 0;
 
-    // Draw semi-transparent overlay
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < currentFrame.data.length; i += 4) {
+      const diff = Math.abs(currentFrame.data[i] - previousFrame.data[i]) +
+                  Math.abs(currentFrame.data[i + 1] - previousFrame.data[i + 1]) +
+                  Math.abs(currentFrame.data[i + 2] - previousFrame.data[i + 2]);
 
-    // Calculate frame dimensions
-    const frameWidth = Math.min(canvas.width * 0.35, 400); // Limit max width
-    const frameHeight = frameWidth * 1.3; // Golden ratio-ish proportion
-    const centerX = canvas.width / 2;
-    const centerY = (canvas.height / 2) - (frameHeight * 0.1); // Slightly above center
-
-    // Set frame style
-    const frameColor = isFaceAligned ? '#22c55e' : '#ffffff';
-    ctx.strokeStyle = frameColor;
-    ctx.lineWidth = Math.max(2, frameWidth * 0.006);
-
-    // Draw guide frame
-    const x = centerX - frameWidth / 2;
-    const y = centerY - frameHeight / 2;
-    const cornerLength = frameWidth * 0.15;
-
-    // Draw corners with L-shapes
-    ctx.beginPath();
-
-    // Top-left corner
-    ctx.moveTo(x + cornerLength, y);
-    ctx.lineTo(x, y);
-    ctx.lineTo(x, y + cornerLength);
-
-    // Top-right corner
-    ctx.moveTo(x + frameWidth - cornerLength, y);
-    ctx.lineTo(x + frameWidth, y);
-    ctx.lineTo(x + frameWidth, y + cornerLength);
-
-    // Bottom-left corner
-    ctx.moveTo(x, y + frameHeight - cornerLength);
-    ctx.lineTo(x, y + frameHeight);
-    ctx.lineTo(x + cornerLength, y + frameHeight);
-
-    // Bottom-right corner
-    ctx.moveTo(x + frameWidth, y + frameHeight - cornerLength);
-    ctx.lineTo(x + frameWidth, y + frameHeight);
-    ctx.lineTo(x + frameWidth - cornerLength, y + frameHeight);
-
-    ctx.stroke();
-
-    // Clear the inner area
-    ctx.save();
-    ctx.globalCompositeOperation = 'destination-out';
-    const clearMargin = frameWidth * 0.02;
-    ctx.fillRect(
-        x + clearMargin,
-        y + clearMargin,
-        frameWidth - (clearMargin * 2),
-        frameHeight - (clearMargin * 2)
-    );
-    ctx.restore();
-
-    // Draw center crosshair if not aligned
-    if (!isFaceAligned) {
-        const crosshairSize = frameWidth * 0.05;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.lineWidth = Math.max(1, frameWidth * 0.002);
-
-        ctx.beginPath();
-        // Horizontal line
-        ctx.moveTo(centerX - crosshairSize, centerY);
-        ctx.lineTo(centerX + crosshairSize, centerY);
-        // Vertical line
-        ctx.moveTo(centerX, centerY - crosshairSize);
-        ctx.lineTo(centerX, centerY + crosshairSize);
-        ctx.stroke();
+      if (diff > threshold) {
+        differentPixels++;
+      }
     }
 
-    // Add guidance text with drop shadow for better visibility
-    ctx.textAlign = 'center';
-    ctx.fillStyle = frameColor;
+    const percentageDifferent = differentPixels / (currentFrame.data.length / 4);
+    return percentageDifferent < pixelDiffThreshold;
+  };
 
-    // Main instruction text
-    const fontSize = Math.max(16, Math.min(24, frameWidth * 0.05));
-    ctx.font = `bold ${fontSize}px system-ui`;
+  const checkLightingQuality = (frame: ImageData): boolean => {
+    let totalBrightness = 0;
+    for (let i = 0; i < frame.data.length; i += 4) {
+      const r = frame.data[i];
+      const g = frame.data[i + 1];
+      const b = frame.data[i + 2];
+      totalBrightness += (r + g + b) / 3;
+    }
 
-    // Add text shadow for better visibility
-    const mainText = isFaceAligned ? 'Perfect! Stay still' : 'Center your face in the frame';
-    const textY = y + frameHeight + fontSize * 2;
+    const averageBrightness = totalBrightness / (frame.data.length / 4) / 255;
+    return averageBrightness > 0.2 && averageBrightness < 0.8; // Acceptable brightness range
+  };
 
-    // Draw text shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-    ctx.fillText(mainText, centerX + 1, textY + 1);
+  const drawDebugInfo = (
+    ctx: CanvasRenderingContext2D,
+    face: any,
+    videoWidth: number,
+    videoHeight: number,
+    brightness: number,
+  ) => {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    // Draw main text
-    ctx.fillStyle = frameColor;
-    ctx.fillText(mainText, centerX, textY);
+    if (face && face.landmarks && face.landmarks.positions) {
+      ctx.font = "12px monospace";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+      ctx.textBaseline = "top";
 
-    // Additional guidance (only show if not aligned)
-    if (!isFaceAligned) {
-        const subText = 'Look directly at the camera';
-        ctx.font = `${fontSize * 0.8}px system-ui`;
+      const debugInfo = [
+        `FPS: ${fps.toFixed(1)}`,
+        `Face Detected: Yes`,
+        `Brightness: ${(brightness * 100).toFixed(1)}%`,
+        `Frame Time: ${frameTimeRef.current.toFixed(1)}ms`,
+      ];
 
-        // Draw text shadow
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.fillText(subText, centerX + 1, textY + fontSize * 1.5 + 1);
+      debugInfo.forEach((text, i) => {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+        ctx.fillRect(10, 10 + i * 20, ctx.measureText(text).width + 10, 20);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+        ctx.fillText(text, 15, 12 + i * 20);
+      });
+    }
+  };
 
-        // Draw sub text
-        ctx.fillStyle = frameColor;
-        ctx.fillText(subText, centerX, textY + fontSize * 1.5);
+  const calculateBrightness = (videoElement: HTMLVideoElement): number => {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context) return 0;
+
+    canvas.width = videoElement.videoWidth;
+    canvas.height = videoElement.videoHeight;
+    context.drawImage(videoElement, 0, 0);
+
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    let brightness = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      brightness += (data[i] + data[i + 1] + data[i + 2]) / 3;
+    }
+
+    return brightness / (data.length / 4) / 255;
+  };
+
+  const processFrame = async () => {
+    if (!videoRef.current || !heartRateDetectorRef.current || !bloodPressureEstimatorRef.current || !overlayCanvasRef.current || !debugCanvasRef.current) {
+      console.log("Missing required refs for vital detection");
+      return;
+    }
+
+    const now = performance.now();
+    frameCountRef.current++;
+    if (now - lastFpsUpdateRef.current >= 1000) {
+      setFps((frameCountRef.current * 1000) / (now - lastFpsUpdateRef.current));
+      frameCountRef.current = 0;
+      lastFpsUpdateRef.current = now;
+    }
+
+    if (!videoRef.current.videoWidth || !videoRef.current.videoHeight) {
+      console.log("Video dimensions not available yet");
+      animationFrameRef.current = requestAnimationFrame(processFrame);
+      return;
+    }
+
+    // Create canvas for frame analysis
+    const analysisCanvas = document.createElement('canvas');
+    analysisCanvas.width = videoRef.current.videoWidth;
+    analysisCanvas.height = videoRef.current.videoHeight;
+    const analysisCtx = analysisCanvas.getContext('2d');
+
+    if (!analysisCtx) {
+      console.error("Could not get analysis canvas context");
+      return;
+    }
+
+    // Draw current frame to analysis canvas
+    analysisCtx.drawImage(videoRef.current, 0, 0);
+    const currentFrameData = analysisCtx.getImageData(0, 0, analysisCanvas.width, analysisCanvas.height);
+
+    // Check conditions
+    const isStable = checkDeviceStability(currentFrameData, lastFrameData);
+    const hasGoodLighting = checkLightingQuality(currentFrameData);
+
+    try {
+      const faceDetection = await detectFace(videoRef.current);
+      const hasFace = !!faceDetection;
+
+      // Check if face is well positioned within the guidance box
+      let isWellPositioned = false;
+      if (faceDetection?.detection) {
+        const faceBox = faceDetection.detection.box;
+        const boxRegion = {
+          left: videoRef.current.videoWidth * 0.3,
+          right: videoRef.current.videoWidth * 0.7,
+          top: videoRef.current.videoHeight * 0.2,
+          bottom: videoRef.current.videoHeight * 0.8
+        };
+
+        isWellPositioned =
+          faceBox.x > boxRegion.left &&
+          faceBox.x + faceBox.width < boxRegion.right &&
+          faceBox.y > boxRegion.top &&
+          faceBox.y + faceBox.height < boxRegion.bottom;
+      }
+
+      // Update conditions state
+      setConditions({
+        isStable,
+        hasFace,
+        hasGoodLighting,
+        isWellPositioned
+      });
+
+      // Handle progress tracking
+      const allConditionsMet = isStable && hasFace && hasGoodLighting && isWellPositioned;
+
+      if (timerRef.current) {
+        const duration = 60000; // 60 seconds
+        const currentTime = Date.now();
+
+        // Initialize start time if not set
+        if (!startTimeRef.current) {
+          startTimeRef.current = currentTime;
+          lastElapsedTimeRef.current = 0;
+          console.log("[Progress] Starting timer");
+        }
+
+        try {
+          // Only accumulate time when all conditions are met
+          if (allConditionsMet) {
+            const timeIncrement = currentTime - startTimeRef.current;
+            const newElapsed = lastElapsedTimeRef.current + timeIncrement;
+            const newProgress = Math.min(100, (newElapsed / duration) * 100);
+
+            console.log("[Progress] Conditions met, adding time:", {
+              increment: timeIncrement,
+              total: newElapsed,
+              progress: newProgress.toFixed(1) + "%"
+            });
+
+            setProgress(newProgress);
+
+            if (newProgress >= 100) {
+              if (timerRef.current) {
+                clearInterval(timerRef.current);
+              }
+              stopVideo();
+              const finalReport = vitalMeasurementsRef.current.getFinalReport();
+              console.log("Final vital signs report:", finalReport);
+              onComplete?.(finalReport);
+            }
+
+            // Update accumulated time
+            lastElapsedTimeRef.current = newElapsed;
+          } else {
+            console.log("[Progress] Paused at", (lastElapsedTimeRef.current / duration * 100).toFixed(1) + "%", 
+              "- Waiting for:", {
+                stability: !isStable,
+                face: !hasFace,
+                lighting: !hasGoodLighting,
+                position: !isWellPositioned
+              }
+            );
+          }
+        } catch (error) {
+          console.error("[Progress] Error updating progress:", error);
+        }
+
+        // Always update the reference time for next calculation
+        startTimeRef.current = currentTime;
+      }
+
+
+      const brightness = calculateBrightness(videoRef.current);
+      console.log(
+        "[Frame] Scene brightness:",
+        (brightness * 100).toFixed(1) + "%",
+      );
+
+      const debugCtx = debugCanvasRef.current.getContext("2d");
+      if (debugCtx) {
+        drawDebugInfo(
+          debugCtx,
+          faceDetection,
+          videoRef.current.videoWidth,
+          videoRef.current.videoHeight,
+          brightness,
+        );
+      }
+
+      const overlayCtx = overlayCanvasRef.current.getContext("2d");
+      if (overlayCtx) {
+        drawFacialFeatures(
+          overlayCtx,
+          faceDetection,
+          videoRef.current.videoWidth,
+          videoRef.current.videoHeight,
+          performance.now()
+        );
+      }
+
+      if (allConditionsMet) {
+        try {
+          console.log("[Frame] Processing vital signs...");
+          const heartRateData = await heartRateDetectorRef.current.update(
+            videoRef.current,
+            faceDetection,
+          );
+
+          if (heartRateData) {
+            console.log("[Frame] Raw heart rate data:", heartRateData);
+          }
+
+          const bloodPressure = await (async () => {
+            try {
+              if (now - lastBPUpdateRef.current >= 200) {
+                if (!videoRef.current || !bloodPressureEstimatorRef.current) {
+                  console.log("Missing refs for BP estimation");
+                  return "--/--";
+                }
+                const bp = await bloodPressureEstimatorRef.current.update(
+                  videoRef.current,
+                  faceDetection,
+                );
+                console.log("Blood pressure reading:", bp);
+                lastBPUpdateRef.current = now;
+                return bp;
+              }
+              return "--/--";
+            } catch (error) {
+              console.error("Error in blood pressure estimation:", error);
+              return "--/--";
+            }
+          })();
+
+          const heartRate = heartRateData?.heartRate ?? 0;
+          const validHeartRate =
+            heartRate >= 40 && heartRate <= 200 ? Math.round(heartRate) : 0;
+          const hrv = heartRateData?.hrv ?? 0;
+          const validHrv = hrv >= 10 && hrv <= 150 ? hrv : 0;
+
+          let bloodGlucose = 0;
+          if (validHeartRate > 0 && bloodPressure !== "--/--") {
+            try {
+              const [systolic, diastolic] = bloodPressure.split('/').map(Number);
+              if (!isNaN(systolic) && !isNaN(diastolic)) {
+                bloodGlucose = estimateBloodGlucose(validHeartRate, systolic, diastolic);
+              }
+            } catch (error) {
+              console.error("Error calculating blood glucose:", error);
+            }
+          }
+
+          if (validHeartRate > 0 || validHrv > 0) {
+            vitalMeasurementsRef.current.addReading({
+              heartRate: validHeartRate,
+              bloodPressure: bloodPressure,
+              hrv: Math.floor(validHrv * 10) / 10,
+              bloodGlucose: bloodGlucose,
+            });
+
+            const report = vitalMeasurementsRef.current.getFinalReport();
+
+            onVitalsUpdate?.({
+              heartRate: report.averageHeartRate || validHeartRate,
+              bloodPressure: report.averageBloodPressure || bloodPressure,
+              hrv: report.averageHRV || Math.floor(validHrv * 10) / 10,
+              bloodGlucose: report.averageBloodGlucose || bloodGlucose,
+              heartRateHistory: heartRateData?.history ?? []
+            });
+          }
+        } catch (error) {
+          console.error("[Frame] Error processing vitals:", error);
+        }
+      } else {
+        console.log("[Frame] Conditions not met for vital signs processing");
+      }
+
+      // Update last frame data for next comparison
+      setLastFrameData(currentFrameData);
+
+      animationFrameRef.current = requestAnimationFrame(processFrame);
+    } catch (error) {
+      console.error("Error in frame processing:", error);
+      animationFrameRef.current = requestAnimationFrame(processFrame);
     }
   };
 
   const stopVideo = () => {
     if (videoRef.current?.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => {
+      stream.getTracks().forEach((track) => {
         track.stop();
         stream.removeTrack(track);
       });
@@ -188,7 +406,9 @@ export default function VideoStream({ onStreamStart, onComplete, onVitalsUpdate,
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
-    setTimeLeft(null);
+    startTimeRef.current = null;
+    lastElapsedTimeRef.current = 0;
+    setProgress(0);
   };
 
   const handleCancel = () => {
@@ -196,107 +416,20 @@ export default function VideoStream({ onStreamStart, onComplete, onVitalsUpdate,
     onCancel?.();
   };
 
-  const processFrame = async () => {
-    if (!videoRef.current || !heartRateDetectorRef.current || !bloodPressureEstimatorRef.current || !overlayCanvasRef.current) {
-      console.log('Missing required refs for vital detection');
-      return;
-    }
-
-    // Check if video dimensions are available
-    if (!videoRef.current.videoWidth || !videoRef.current.videoHeight) {
-      console.log('Video dimensions not available yet');
-      animationFrameRef.current = requestAnimationFrame(processFrame);
-      return;
-    }
-
-    try {
-      const faceDetection = await detectFace(videoRef.current);
-
-      // Update face alignment status
-      const isAligned = faceDetection ? isFaceWellPositioned(faceDetection, videoRef.current.videoWidth, videoRef.current.videoHeight) : false;
-      setIsFaceAligned(isAligned);
-
-      // Update overlay with face guidance
-      drawFaceGuidance(
-        overlayCanvasRef.current,
-        videoRef.current.videoWidth,
-        videoRef.current.videoHeight
-      );
-
-      if (faceDetection) {
-        try {
-          // Process vitals in parallel for better performance
-          const [{ heartRate: rawHeartRate, hrv: rawHrv }, bloodPressure] = await Promise.all([
-            heartRateDetectorRef.current.update(videoRef.current, faceDetection),
-            bloodPressureEstimatorRef.current.update(videoRef.current, faceDetection)
-          ]);
-
-          // Apply bounds to heart rate
-          const heartRate = Math.min(200, Math.max(40, rawHeartRate));
-
-          // Apply bounds to HRV
-          const hrv = Math.min(150, Math.max(10, rawHrv));
-
-          // Apply bounds to blood pressure with increased sensitivity
-          let boundedBP = bloodPressure;
-          if (bloodPressure !== "--") {
-            const [systolic, diastolic] = bloodPressure.split('/').map(Number);
-            // Adjust bounds to be more lenient while still staying within medical ranges
-            const boundedSystolic = Math.min(180, Math.max(90, systolic));
-            const boundedDiastolic = Math.min(110, Math.max(60, diastolic));
-
-            // Only consider the measurement valid if both values are reasonable
-            if (boundedSystolic > boundedDiastolic) {
-              boundedBP = `${boundedSystolic}/${boundedDiastolic}`;
-            } else {
-              boundedBP = "--";
-            }
-          }
-
-          // Calculate blood glucose with bounds
-          const [systolic, diastolic] = boundedBP !== "--" ? boundedBP.split('/').map(Number) : [0, 0];
-          const rawGlucose = estimateBloodGlucose(heartRate, systolic, diastolic);
-          const bloodGlucose = Math.min(200, Math.max(70, rawGlucose));
-
-          // Update vitals if any valid measurement is available
-          // Make blood pressure detection more sensitive by considering partial measurements
-          const hasValidVitals = heartRate > 0 || boundedBP !== "--" || hrv > 0 || bloodGlucose > 0;
-          if (hasValidVitals) {
-            onVitalsUpdate?.({
-              heartRate: heartRate,
-              bloodPressure: boundedBP,
-              hrv: hrv,
-              bloodGlucose: bloodGlucose
-            });
-          }
-        } catch (error) {
-          console.error('Error processing frame:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Error processing frame:', error);
-    }
-
-    // Schedule next frame with higher frequency (decrease delay)
-    animationFrameRef.current = requestAnimationFrame(processFrame);
-  };
-
   const startVideo = async () => {
-    console.log('Starting video stream...');
+    console.log("Starting video stream...");
     setIsLoading(true);
     setError(null);
-    setTimeLeft(null);
+    setProgress(0);
 
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Video capture is not supported in your browser");
       }
 
-      // Initialize detectors
       heartRateDetectorRef.current = new HeartRateDetector();
       bloodPressureEstimatorRef.current = new BloodPressureEstimator();
 
-      // Try to get the video stream with optimal settings
       let stream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -304,44 +437,51 @@ export default function VideoStream({ onStreamStart, onComplete, onVitalsUpdate,
             width: { ideal: 1280 },
             height: { ideal: 720 },
             facingMode: "user",
-            frameRate: { ideal: 30, min: 25 }
+            frameRate: { ideal: 30, min: 25 },
           },
-          audio: false
+          audio: false,
         });
       } catch (e) {
-        console.log('Falling back to basic video constraints');
+        console.log("Falling back to basic video constraints");
         stream = await navigator.mediaDevices.getUserMedia({
           video: true,
-          audio: false
+          audio: false,
         });
       }
 
-      console.log('Camera access granted');
+      console.log("Camera access granted");
 
-      if (videoRef.current && overlayCanvasRef.current) {
+      if (
+        videoRef.current &&
+        overlayCanvasRef.current &&
+        debugCanvasRef.current
+      ) {
         videoRef.current.srcObject = stream;
         onStreamStart(stream);
 
-        // Set canvas dimensions to match video
         const updateCanvasDimensions = () => {
-          if (videoRef.current && overlayCanvasRef.current) {
+          if (
+            videoRef.current &&
+            overlayCanvasRef.current &&
+            debugCanvasRef.current
+          ) {
             overlayCanvasRef.current.width = videoRef.current.videoWidth;
             overlayCanvasRef.current.height = videoRef.current.videoHeight;
+            debugCanvasRef.current.width = videoRef.current.videoWidth;
+            debugCanvasRef.current.height = videoRef.current.videoHeight;
           }
         };
 
         videoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded');
+          console.log("Video metadata loaded");
           updateCanvasDimensions();
           videoRef.current?.play();
         };
 
-        // Start processing and timer when video starts playing
         videoRef.current.onplaying = () => {
-          console.log('Video started playing, beginning vital detection');
-          setTimeLeft(30);
+          console.log("Video started playing, beginning vital detection");
+          setProgress(0);
 
-          // Start processing frames
           animationFrameRef.current = requestAnimationFrame(processFrame);
 
           if (timerRef.current) {
@@ -349,23 +489,16 @@ export default function VideoStream({ onStreamStart, onComplete, onVitalsUpdate,
           }
 
           timerRef.current = setInterval(() => {
-            setTimeLeft((prev) => {
-              if (prev === null || prev <= 0) {
-                if (timerRef.current) {
-                  clearInterval(timerRef.current);
-                }
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
+            // Progress is now handled within processFrame
+          }, 100);
         };
       }
     } catch (error) {
-      console.error('Error starting video:', error);
-      const errorMessage = error instanceof Error
-        ? error.message
-        : "Unable to access camera. Please ensure camera permissions are enabled.";
+      console.error("Error starting video:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Unable to access camera. Please ensure camera permissions are enabled.";
 
       setError(errorMessage);
       toast({
@@ -379,18 +512,116 @@ export default function VideoStream({ onStreamStart, onComplete, onVitalsUpdate,
     }
   };
 
-  useEffect(() => {
-    if (timeLeft === 0) {
-      stopVideo();
-      onComplete?.();
+  const drawFacialFeatures = (
+    ctx: CanvasRenderingContext2D,
+    face: any,
+    videoWidth: number,
+    videoHeight: number,
+    timestamp: number
+  ) => {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    // Always draw the guidance box, whether face is detected or not
+    const boxWidth = ctx.canvas.width * 0.4;
+    const boxHeight = boxWidth * 0.9;
+    const centerX = ctx.canvas.width / 2;
+    const centerY = ctx.canvas.height / 2;
+    const x = centerX - boxWidth / 2;
+    const y = centerY - boxHeight / 2;
+
+    const cornerLength = Math.min(boxWidth, boxHeight) * 0.2;
+    const lineWidth = Math.max(2, Math.min(boxWidth, boxHeight) * 0.03);
+    ctx.lineWidth = lineWidth;
+
+    let isFaceAligned = false;
+    if (face?.detection) {
+      const faceBox = face.detection.box;
+      const boxRegion = {
+        left: x,
+        right: x + boxWidth,
+        top: y,
+        bottom: y + boxHeight,
+      };
+
+      isFaceAligned =
+        faceBox.x > boxRegion.left - boxWidth * 0.1 &&
+        faceBox.x + faceBox.width < boxRegion.right + boxWidth * 0.1 &&
+        faceBox.y > boxRegion.top - boxHeight * 0.1 &&
+        faceBox.y + faceBox.height < boxRegion.bottom + boxHeight * 0.1;
     }
-  }, [timeLeft, onComplete]);
+
+    // Always show guidance box, color changes based on face alignment
+    ctx.strokeStyle = isFaceAligned ? "rgba(74, 222, 128, 0.8)" : "rgba(239, 68, 68, 0.8)";
+
+    // Draw corner guides
+    ctx.beginPath();
+
+    // Top-left corner
+    ctx.moveTo(x, y + cornerLength);
+    ctx.lineTo(x, y);
+    ctx.lineTo(x + cornerLength, y);
+
+    // Top-right corner
+    ctx.moveTo(x + boxWidth - cornerLength, y);
+    ctx.lineTo(x + boxWidth, y);
+    ctx.lineTo(x + boxWidth, y + cornerLength);
+
+    // Bottom-right corner
+    ctx.moveTo(x + boxWidth, y + boxHeight - cornerLength);
+    ctx.lineTo(x + boxWidth, y + boxHeight);
+    ctx.lineTo(x + boxWidth - cornerLength, y + boxHeight);
+
+    // Bottom-left corner
+    ctx.moveTo(x + cornerLength, y + boxHeight);
+    ctx.lineTo(x, y + boxHeight);
+    ctx.lineTo(x, y + boxHeight - cornerLength);
+
+    ctx.stroke();
+  };
+
+  // Add startTimeRef for progress tracking
+  const startTimeRef = useRef<number | null>(null);
+  const lastElapsedTimeRef = useRef<number>(0);
+
+  useEffect(() => {
+
+    if (progress >= 100) {
+      stopVideo();
+      const finalReport = vitalMeasurementsRef.current.getFinalReport();
+      console.log("Final vital signs report:", finalReport);
+      onComplete?.(finalReport);
+    }
+  }, [progress, onComplete]);
 
   useEffect(() => {
     return () => {
       stopVideo();
+      vitalMeasurementsRef.current.clear();
     };
   }, []);
+
+  useEffect(() => {
+    console.log('Initializing face detection...');
+    loadFaceDetectionModels()
+      .then(() => {
+        console.log('Face detection models loaded successfully');
+        setIsModelLoading(false);
+        startVideo();
+      })
+      .catch((error) => {
+        console.error('Error loading face detection models:', error);
+        setError(
+          'Failed to load face detection models. Please check console for details.',
+        );
+        setIsModelLoading(false);
+      });
+
+    return () => {
+      console.log("Cleaning up video resources...");
+      stopVideo();
+    };
+  }, []);
+
 
   if (isModelLoading) {
     return (
@@ -402,25 +633,7 @@ export default function VideoStream({ onStreamStart, onComplete, onVitalsUpdate,
   }
 
   return (
-    <div className="space-y-6">
-      {timeLeft !== null && (
-        <div className={cn(
-          "border-l-4 p-4 mb-4",
-          isFaceAligned ? "bg-green-50 border-green-500" : "bg-blue-50 border-blue-500"
-        )}>
-          <div className="flex items-center">
-            <p className={cn(
-              "text-sm",
-              isFaceAligned ? "text-green-700" : "text-blue-700"
-            )}>
-              {isFaceAligned
-                ? "Perfect! Please stay still while we measure your vital signs."
-                : "Please position your face within the frame and look directly at the camera."}
-            </p>
-          </div>
-        </div>
-      )}
-
+    <div className="space-y-4">
       <Card className="overflow-hidden bg-gray-900 h-full relative">
         <video
           ref={videoRef}
@@ -431,6 +644,11 @@ export default function VideoStream({ onStreamStart, onComplete, onVitalsUpdate,
 
         <canvas
           ref={overlayCanvasRef}
+          className="absolute inset-0 w-full h-full pointer-events-none"
+        />
+
+        <canvas
+          ref={debugCanvasRef}
           className="absolute inset-0 w-full h-full pointer-events-none"
         />
 
@@ -446,23 +664,55 @@ export default function VideoStream({ onStreamStart, onComplete, onVitalsUpdate,
           </div>
         )}
 
-        {timeLeft !== null && (
-          <div className="absolute top-4 right-4 flex items-center gap-2">
-            <div className="bg-black/70 text-white px-4 py-2 rounded-full font-mono text-xl">
-              {timeLeft}s
+        {videoRef.current?.srcObject && (
+          <>
+            <div className="absolute top-0 left-0 w-full h-1 bg-gray-800">
+              <motion.div
+                className="h-full bg-white"
+                style={{
+                  width: `${progress}%`,
+                  transition: "width 0.3s ease-out"
+                }}
+              />
             </div>
             <Button
               variant="destructive"
               size="icon"
               onClick={handleCancel}
-              className="rounded-full bg-red-500"
-              style={{borderRadius: '100%'}}
+              className="absolute top-4 right-4 rounded-full bg-red-600"
             >
-              <X className="h-9 w-9 " color="white" />
+              <X className="h-4 w-4" color="white" />
             </Button>
-          </div>
+          </>
         )}
       </Card>
+
+      {videoRef.current?.srcObject && !conditions.isStable && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            <p className="text-sm text-yellow-800">Keep your device steady for accurate measurements</p>
+          </div>
+        </div>
+      )}
+
+      {videoRef.current?.srcObject && (!conditions.hasFace || !conditions.isWellPositioned) && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            <p className="text-sm text-yellow-800">Position your face within the frame guides</p>
+          </div>
+        </div>
+      )}
+
+      {videoRef.current?.srcObject && !conditions.hasGoodLighting && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            <p className="text-sm text-yellow-800">Move to a better lit area</p>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="flex items-center gap-2 text-sm text-red-600 justify-center">
@@ -474,30 +724,42 @@ export default function VideoStream({ onStreamStart, onComplete, onVitalsUpdate,
   );
 }
 
-const estimateBloodGlucose = (heartRate: number, systolic: number, diastolic: number): number => {
+const estimateBloodGlucose = (
+  heartRate: number,
+  systolic: number,
+  diastolic: number,
+): number => {
   if (!heartRate || !systolic || !diastolic) {
-    console.log('Missing vital signs for glucose estimation:', { heartRate, systolic, diastolic });
+    console.log("Missing vital signs for glucose estimation:", {
+      heartRate,
+      systolic,
+      diastolic,
+    });
     return 0;
   }
 
-  // Enhanced estimation model with better physiological correlation
   const baseGlucose = 100;
 
-  // Adjust based on heart rate (higher heart rate often correlates with lower glucose)
-  const hrAdjustment = (heartRate - 70) * -0.3;
+  const hrFactor = Math.max(-15, Math.min(15, (70 - heartRate) * 0.4));
 
-  // Adjust based on blood pressure (higher BP often correlates with higher glucose)
-  const bpAdjustment = ((systolic - 120) * 0.2 + (diastolic - 80) * 0.4);
+  const meanBP = (systolic + 2 * diastolic) / 3;
+  const optimalMeanBP = 93;
+  const bpDeviation = Math.abs(meanBP - optimalMeanBP);
+  const bpFactor = Math.min(20, bpDeviation * 0.5);
 
-  // Calculate final estimate with bounds checking
-  let glucose = baseGlucose + hrAdjustment + bpAdjustment;
-  glucose = Math.max(70, Math.min(200, glucose));
+  const pulsePressure = systolic - diastolic;
+  const ppFactor = Math.max(-10, Math.min(10, (pulsePressure - 40) * 0.3));
 
-  console.log('Blood glucose estimation:', {
+  let glucose = baseGlucose + hrFactor + bpFactor + ppFactor;
+
+  glucose = Math.max(70, Math.min(180, glucose));
+
+  console.log("Blood glucose estimation:", {
     baseGlucose,
-    hrAdjustment,
-    bpAdjustment,
-    finalGlucose: Math.round(glucose)
+    hrFactor,
+    bpFactor,
+    ppFactor,
+    finalGlucose: Math.round(glucose),
   });
 
   return Math.round(glucose);
