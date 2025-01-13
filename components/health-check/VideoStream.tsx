@@ -11,6 +11,7 @@ import { BloodPressureEstimator } from "@/src/lib/bloodPressureEstimation";
 import { VitalMeasurements } from "@/src/lib/vitalMeasurements";
 import { motion } from "framer-motion";
 import { AverageFinalReport } from "./VideoCheckIn";
+import { CustomProgress } from "../ui/CustomProgress";
 
 interface VideoStreamProps {
   onStreamStart: (stream: MediaStream | null) => void;
@@ -634,93 +635,100 @@ export default function VideoStream({
 
   return (
     <div className="space-y-4">
-      <Card className="overflow-hidden bg-gray-900 h-full relative">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          className="w-full h-full object-cover"
-        />
+  <Card className="overflow-hidden bg-gray-900 h-full relative">
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      className="w-full h-full object-cover"
+    />
 
-        <canvas
-          ref={overlayCanvasRef}
-          className="absolute inset-0 w-full h-full pointer-events-none"
-        />
+    <canvas
+      ref={overlayCanvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+    />
 
-        <canvas
-          ref={debugCanvasRef}
-          className="absolute inset-0 w-full h-full pointer-events-none"
-        />
+    <canvas
+      ref={debugCanvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+    />
 
-        {!videoRef.current?.srcObject && !isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Camera className="h-16 w-16 text-gray-400" />
-          </div>
-        )}
+    {!videoRef.current?.srcObject && !isLoading && (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <Camera className="h-16 w-16 text-gray-400" />
+      </div>
+    )}
 
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
-            <Loader2 className="h-8 w-8 text-white animate-spin" />
-          </div>
-        )}
+    {isLoading && (
+      <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
+        <Loader2 className="h-8 w-8 text-white animate-spin" />
+      </div>
+    )}
 
-        {videoRef.current?.srcObject && (
-          <>
-            <div className="absolute top-0 left-0 w-full h-1 bg-gray-800">
-              <motion.div
-                className="h-full bg-white"
-                style={{
-                  width: `${progress}%`,
-                  transition: "width 0.3s ease-out"
-                }}
-              />
-            </div>
-            <Button
-              variant="destructive"
-              size="icon"
-              onClick={handleCancel}
-              className="absolute top-4 right-4 rounded-full bg-red-600"
-            >
-              <X className="h-4 w-4" color="white" />
-            </Button>
-          </>
-        )}
-      </Card>
-
-      {videoRef.current?.srcObject && !conditions.isStable && (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+    {videoRef.current?.srcObject && (
+      <>
+        <div className="absolute bottom-0 left-0 w-full px-4 py-2 bg-gray-800">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-yellow-600" />
-            <p className="text-sm text-yellow-800">Keep your device steady for accurate measurements</p>
+            <CustomProgress value={progress} className="w-full bg-white" color="#44c569">
+              <div
+                className="absolute text-sm font-medium text-white"
+                style={{ left: `${progress}%`, transform: "translateX(-50%)" }}
+              >
+                {Math.round(progress)}%
+              </div>
+            </CustomProgress>
           </div>
         </div>
-      )}
+        <Button
+          variant="destructive"
+          size="icon"
+          onClick={handleCancel}
+          className="absolute top-4 right-4 rounded-full bg-red-600"
+        >
+          <X className="h-4 w-4" color="white" />
+        </Button>
+      </>
+    )}
+  </Card>
 
-      {videoRef.current?.srcObject && (!conditions.hasFace || !conditions.isWellPositioned) && (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-yellow-600" />
-            <p className="text-sm text-yellow-800">Position your face within the frame guides</p>
-          </div>
-        </div>
-      )}
-
-      {videoRef.current?.srcObject && !conditions.hasGoodLighting && (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-yellow-600" />
-            <p className="text-sm text-yellow-800">Move to a better lit area</p>
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="flex items-center gap-2 text-sm text-red-600 justify-center">
-          <AlertCircle className="h-4 w-4" />
-          <span>{error}</span>
-        </div>
-      )}
+  {videoRef.current?.srcObject && !conditions.isStable && (
+    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <div className="flex items-center gap-2">
+        <AlertCircle className="h-4 w-4 text-yellow-600" />
+        <p className="text-sm text-yellow-800">
+          Keep your device steady for accurate measurements
+        </p>
+      </div>
     </div>
+  )}
+
+  {videoRef.current?.srcObject && (!conditions.hasFace || !conditions.isWellPositioned) && (
+    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <div className="flex items-center gap-2">
+        <AlertCircle className="h-4 w-4 text-yellow-600" />
+        <p className="text-sm text-yellow-800">
+          Position your face within the frame guides
+        </p>
+      </div>
+    </div>
+  )}
+
+  {videoRef.current?.srcObject && !conditions.hasGoodLighting && (
+    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <div className="flex items-center gap-2">
+        <AlertCircle className="h-4 w-4 text-yellow-600" />
+        <p className="text-sm text-yellow-800">Move to a better lit area</p>
+      </div>
+    </div>
+  )}
+
+  {error && (
+    <div className="flex items-center gap-2 text-sm text-red-600 justify-center">
+      <AlertCircle className="h-4 w-4" />
+      <span>{error}</span>
+    </div>
+  )}
+</div>
   );
 }
 
