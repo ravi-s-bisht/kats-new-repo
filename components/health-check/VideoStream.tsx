@@ -220,7 +220,7 @@ export default function VideoStream({
       const allConditionsMet = isStable && hasFace && hasGoodLighting && isWellPositioned;
 
       if (timerRef.current) {
-        const duration = 60000; // 60 seconds
+        const duration = 30000; // 60 seconds
         const currentTime = Date.now();
 
         // Initialize start time if not set
