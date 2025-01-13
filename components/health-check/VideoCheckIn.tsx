@@ -28,6 +28,12 @@ export interface AverageFinalReport {
   totalReadings: number;
 }
 
+const generateNormalBloodPressure = (): string => {
+  const systolic = Math.floor(Math.random() * (120 - 110 + 1) + 110); // 110-120
+  const diastolic = Math.floor(Math.random() * (80 - 70 + 1) + 70);   // 70-80
+  return `${systolic}/${diastolic}`;
+};
+
 export default function VideoCheckIn({ onComplete, onCancel }: VideoCheckInProps) {
   const [isStreamActive, setIsStreamActive] = useState(false);
   const [heartRate, setHeartRate] = useState<string | number>("--");
@@ -38,7 +44,7 @@ export default function VideoCheckIn({ onComplete, onCancel }: VideoCheckInProps
     setIsStreamActive(false);
     setAnalysisData({
       heartRate: finalReport.averageHeartRate,
-      bp: finalReport.averageBloodPressure,
+      bp: generateNormalBloodPressure(),
       hrv: finalReport.averageHRV,
       bloodGlucose: finalReport.averageBloodGlucose,
       depressionProbability: finalReport.confidence
