@@ -9,7 +9,7 @@ const CustomProgress = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>
 >(({ className, value = 0, ...props }, ref) => {
   // Determine text color based on the progress value
-  const textColor = value >= 50 ? "text-white" : "text-black";
+  const textColor = value && value >= 50 ? "text-white" : "text-black";
 
   return (
     <ProgressPrimitive.Root
@@ -40,7 +40,7 @@ const CustomProgress = React.forwardRef<
         </ProgressPrimitive.Indicator>
         <div className="absolute inset-0 flex items-center justify-center">
           <span className={cn("text-sm font-semibold transition-colors", textColor)}>
-            {Math.round(value)}%
+            {value ? `${Math.round(value)}%` : "0%"}
           </span>
         </div>
       </div>
