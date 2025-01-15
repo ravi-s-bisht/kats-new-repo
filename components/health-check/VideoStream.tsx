@@ -1,11 +1,15 @@
-'use client';
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, AlertCircle, Loader2, X } from "lucide-react";
-import { detectFace, isFaceWellPositioned, loadFaceDetectionModels } from "@/src/lib/faceDetection";
+import { Camera, AlertCircle, Loader2, X, Info } from "lucide-react";
+import {
+  detectFace,
+  isFaceWellPositioned,
+  loadFaceDetectionModels,
+} from "@/src/lib/faceDetection";
 import { HeartRateDetector } from "@/src/lib/heartRateDetection";
 import { BloodPressureEstimator } from "@/src/lib/bloodPressureEstimation";
 import { VitalMeasurements } from "@/src/lib/vitalMeasurements";
@@ -24,6 +28,7 @@ interface VideoStreamProps {
     heartRateHistory: number[];
   }) => void;
   onCancel?: () => void;
+  handleReset: () => void;
 }
 
 export default function VideoStream({
@@ -31,6 +36,7 @@ export default function VideoStream({
   onComplete,
   onVitalsUpdate,
   onCancel,
+  handleReset,
 }: VideoStreamProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -50,20 +56,30 @@ export default function VideoStream({
   const timerRef = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
   const [isModelLoading, setIsModelLoading] = useState(true);
+  const [showVideoCheck, setShowVideoCheck] = useState(false);
   const lastBPUpdateRef = useRef<number>(0);
-  const vitalMeasurementsRef = useRef<VitalMeasurements>(new VitalMeasurements());
+  const [realTimeHeartRate, setRealTimeHeartRate] = useState<number | null>(
+    null
+  );
+  const [videoStarted, setVideoStarted] = useState(false);
+  const vitalMeasurementsRef = useRef<VitalMeasurements>(
+    new VitalMeasurements()
+  );
   let faceDetection: any;
 
   const [conditions, setConditions] = useState({
     isStable: true,
     hasFace: false,
     hasGoodLighting: true,
-    isWellPositioned: false
+    isWellPositioned: false,
   });
 
   const [lastFrameData, setLastFrameData] = useState<ImageData | null>(null);
 
-  const checkDeviceStability = (currentFrame: ImageData, previousFrame: ImageData | null): boolean => {
+  const checkDeviceStability = (
+    currentFrame: ImageData,
+    previousFrame: ImageData | null
+  ): boolean => {
     if (!previousFrame) return true;
 
     const threshold = 30; // Adjust sensitivity
@@ -71,16 +87,18 @@ export default function VideoStream({
     let differentPixels = 0;
 
     for (let i = 0; i < currentFrame.data.length; i += 4) {
-      const diff = Math.abs(currentFrame.data[i] - previousFrame.data[i]) +
-                  Math.abs(currentFrame.data[i + 1] - previousFrame.data[i + 1]) +
-                  Math.abs(currentFrame.data[i + 2] - previousFrame.data[i + 2]);
+      const diff =
+        Math.abs(currentFrame.data[i] - previousFrame.data[i]) +
+        Math.abs(currentFrame.data[i + 1] - previousFrame.data[i + 1]) +
+        Math.abs(currentFrame.data[i + 2] - previousFrame.data[i + 2]);
 
       if (diff > threshold) {
         differentPixels++;
       }
     }
 
-    const percentageDifferent = differentPixels / (currentFrame.data.length / 4);
+    const percentageDifferent =
+      differentPixels / (currentFrame.data.length / 4);
     return percentageDifferent < pixelDiffThreshold;
   };
 
@@ -102,7 +120,7 @@ export default function VideoStream({
     face: any,
     videoWidth: number,
     videoHeight: number,
-    brightness: number,
+    brightness: number
   ) => {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
@@ -148,7 +166,13 @@ export default function VideoStream({
   };
 
   const processFrame = async () => {
-    if (!videoRef.current || !heartRateDetectorRef.current || !bloodPressureEstimatorRef.current || !overlayCanvasRef.current || !debugCanvasRef.current) {
+    if (
+      !videoRef.current ||
+      !heartRateDetectorRef.current ||
+      !bloodPressureEstimatorRef.current ||
+      !overlayCanvasRef.current ||
+      !debugCanvasRef.current
+    ) {
       console.log("Missing required refs for vital detection");
       return;
     }
@@ -168,10 +192,10 @@ export default function VideoStream({
     }
 
     // Create canvas for frame analysis
-    const analysisCanvas = document.createElement('canvas');
+    const analysisCanvas = document.createElement("canvas");
     analysisCanvas.width = videoRef.current.videoWidth;
     analysisCanvas.height = videoRef.current.videoHeight;
-    const analysisCtx = analysisCanvas.getContext('2d');
+    const analysisCtx = analysisCanvas.getContext("2d");
 
     if (!analysisCtx) {
       console.error("Could not get analysis canvas context");
@@ -180,7 +204,12 @@ export default function VideoStream({
 
     // Draw current frame to analysis canvas
     analysisCtx.drawImage(videoRef.current, 0, 0);
-    const currentFrameData = analysisCtx.getImageData(0, 0, analysisCanvas.width, analysisCanvas.height);
+    const currentFrameData = analysisCtx.getImageData(
+      0,
+      0,
+      analysisCanvas.width,
+      analysisCanvas.height
+    );
 
     // Check conditions
     const isStable = checkDeviceStability(currentFrameData, lastFrameData);
@@ -198,7 +227,7 @@ export default function VideoStream({
           left: videoRef.current.videoWidth * 0.3,
           right: videoRef.current.videoWidth * 0.7,
           top: videoRef.current.videoHeight * 0.2,
-          bottom: videoRef.current.videoHeight * 0.8
+          bottom: videoRef.current.videoHeight * 0.8,
         };
 
         isWellPositioned =
@@ -206,6 +235,10 @@ export default function VideoStream({
           faceBox.x + faceBox.width < boxRegion.right &&
           faceBox.y > boxRegion.top &&
           faceBox.y + faceBox.height < boxRegion.bottom;
+
+        console.log("=====================");
+        console.log("Face Box:", faceBox);
+        console.log("Guidance Box Region:", boxRegion);
       }
 
       // Update conditions state
@@ -213,11 +246,11 @@ export default function VideoStream({
         isStable,
         hasFace,
         hasGoodLighting,
-        isWellPositioned
+        isWellPositioned,
       });
 
       // Handle progress tracking
-      const allConditionsMet = isStable && hasFace && hasGoodLighting && isWellPositioned;
+      const allConditionsMet = isStable && hasFace && isWellPositioned;
 
       if (timerRef.current) {
         const duration = 30000; // 60 seconds
@@ -240,7 +273,7 @@ export default function VideoStream({
             console.log("[Progress] Conditions met, adding time:", {
               increment: timeIncrement,
               total: newElapsed,
-              progress: newProgress.toFixed(1) + "%"
+              progress: newProgress.toFixed(1) + "%",
             });
 
             setProgress(newProgress);
@@ -258,12 +291,15 @@ export default function VideoStream({
             // Update accumulated time
             lastElapsedTimeRef.current = newElapsed;
           } else {
-            console.log("[Progress] Paused at", (lastElapsedTimeRef.current / duration * 100).toFixed(1) + "%", 
-              "- Waiting for:", {
+            console.log(
+              "[Progress] Paused at",
+              ((lastElapsedTimeRef.current / duration) * 100).toFixed(1) + "%",
+              "- Waiting for:",
+              {
                 stability: !isStable,
                 face: !hasFace,
                 lighting: !hasGoodLighting,
-                position: !isWellPositioned
+                position: !isWellPositioned,
               }
             );
           }
@@ -275,11 +311,10 @@ export default function VideoStream({
         startTimeRef.current = currentTime;
       }
 
-
       const brightness = calculateBrightness(videoRef.current);
       console.log(
         "[Frame] Scene brightness:",
-        (brightness * 100).toFixed(1) + "%",
+        (brightness * 100).toFixed(1) + "%"
       );
 
       const debugCtx = debugCanvasRef.current.getContext("2d");
@@ -289,7 +324,7 @@ export default function VideoStream({
           faceDetection,
           videoRef.current.videoWidth,
           videoRef.current.videoHeight,
-          brightness,
+          brightness
         );
       }
 
@@ -309,7 +344,7 @@ export default function VideoStream({
           console.log("[Frame] Processing vital signs...");
           const heartRateData = await heartRateDetectorRef.current.update(
             videoRef.current,
-            faceDetection,
+            faceDetection
           );
 
           if (heartRateData) {
@@ -325,7 +360,7 @@ export default function VideoStream({
                 }
                 const bp = await bloodPressureEstimatorRef.current.update(
                   videoRef.current,
-                  faceDetection,
+                  faceDetection
                 );
                 console.log("Blood pressure reading:", bp);
                 lastBPUpdateRef.current = now;
@@ -347,9 +382,15 @@ export default function VideoStream({
           let bloodGlucose = 0;
           if (validHeartRate > 0 && bloodPressure !== "--/--") {
             try {
-              const [systolic, diastolic] = bloodPressure.split('/').map(Number);
+              const [systolic, diastolic] = bloodPressure
+                .split("/")
+                .map(Number);
               if (!isNaN(systolic) && !isNaN(diastolic)) {
-                bloodGlucose = estimateBloodGlucose(validHeartRate, systolic, diastolic);
+                bloodGlucose = estimateBloodGlucose(
+                  validHeartRate,
+                  systolic,
+                  diastolic
+                );
               }
             } catch (error) {
               console.error("Error calculating blood glucose:", error);
@@ -371,8 +412,13 @@ export default function VideoStream({
               bloodPressure: report.averageBloodPressure || bloodPressure,
               hrv: report.averageHRV || Math.floor(validHrv * 10) / 10,
               bloodGlucose: report.averageBloodGlucose || bloodGlucose,
-              heartRateHistory: heartRateData?.history ?? []
+              heartRateHistory: heartRateData?.history ?? [],
             });
+
+            const newRealTimeHeartRate =
+              report.averageHeartRate || validHeartRate;
+            console.log("NEW REAL TIME HEART RATE", newRealTimeHeartRate);
+            setRealTimeHeartRate(newRealTimeHeartRate);
           }
         } catch (error) {
           console.error("[Frame] Error processing vitals:", error);
@@ -392,6 +438,7 @@ export default function VideoStream({
   };
 
   const stopVideo = () => {
+    setVideoStarted(false);
     if (videoRef.current?.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach((track) => {
@@ -415,6 +462,7 @@ export default function VideoStream({
   const handleCancel = () => {
     stopVideo();
     onCancel?.();
+    handleReset();
   };
 
   const startVideo = async () => {
@@ -422,6 +470,7 @@ export default function VideoStream({
     setIsLoading(true);
     setError(null);
     setProgress(0);
+    setVideoStarted(true);
 
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -454,8 +503,7 @@ export default function VideoStream({
 
       if (
         videoRef.current &&
-        overlayCanvasRef.current &&
-        debugCanvasRef.current
+        overlayCanvasRef.current
       ) {
         videoRef.current.srcObject = stream;
         onStreamStart(stream);
@@ -522,16 +570,25 @@ export default function VideoStream({
   ) => {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    // Always draw the guidance box, whether face is detected or not
-    const boxWidth = ctx.canvas.width * 0.4;
-    const boxHeight = boxWidth * 0.9;
+    // Maintain a fixed aspect ratio for the guidance box (e.g., 4:3)
+    const boxAspectRatio = 16 / 9;
+    let boxWidth = ctx.canvas.width * 0.7; // Scale relative to canvas width
+    let boxHeight = boxWidth / boxAspectRatio;
+
+    // Ensure the box fits within the canvas
+    if (boxHeight > ctx.canvas.height) {
+      const scalingFactor = ctx.canvas.height / boxHeight;
+      boxWidth *= scalingFactor;
+      boxHeight *= scalingFactor;
+    }
+
     const centerX = ctx.canvas.width / 2;
     const centerY = ctx.canvas.height / 2;
     const x = centerX - boxWidth / 2;
     const y = centerY - boxHeight / 2;
 
     const cornerLength = Math.min(boxWidth, boxHeight) * 0.2;
-    const lineWidth = Math.max(2, Math.min(boxWidth, boxHeight) * 0.03);
+    const lineWidth = Math.max(2, Math.min(boxWidth, boxHeight) * 0.05);
     ctx.lineWidth = lineWidth;
 
     let isFaceAligned = false;
@@ -551,10 +608,10 @@ export default function VideoStream({
         faceBox.y + faceBox.height < boxRegion.bottom + boxHeight * 0.1;
     }
 
-    // Always show guidance box, color changes based on face alignment
-    ctx.strokeStyle = isFaceAligned ? "rgba(74, 222, 128, 0.8)" : "rgba(239, 68, 68, 0.8)";
+    ctx.strokeStyle = isFaceAligned
+      ? "rgba(74, 222, 128, 0.8)"
+      : "rgba(239, 68, 68, 0.8)";
 
-    // Draw corner guides
     ctx.beginPath();
 
     // Top-left corner
@@ -585,7 +642,6 @@ export default function VideoStream({
   const lastElapsedTimeRef = useRef<number>(0);
 
   useEffect(() => {
-
     if (progress >= 100) {
       stopVideo();
       const finalReport = vitalMeasurementsRef.current.getFinalReport();
@@ -602,17 +658,16 @@ export default function VideoStream({
   }, []);
 
   useEffect(() => {
-    console.log('Initializing face detection...');
+    console.log("Initializing face detection...");
     loadFaceDetectionModels()
       .then(() => {
-        console.log('Face detection models loaded successfully');
+        console.log("Face detection models loaded successfully");
         setIsModelLoading(false);
-        startVideo();
       })
       .catch((error) => {
-        console.error('Error loading face detection models:', error);
+        console.error("Error loading face detection models:", error);
         setError(
-          'Failed to load face detection models. Please check console for details.',
+          "Failed to load face detection models. Please check console for details."
         );
         setIsModelLoading(false);
       });
@@ -623,119 +678,151 @@ export default function VideoStream({
     };
   }, []);
 
-
   if (isModelLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center h-screen p-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-        <span>Loading face detection models...</span>
+        <span>Loading...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-  <Card className="overflow-hidden bg-gray-900 h-full relative">
-    <video
-      ref={videoRef}
-      autoPlay
-      playsInline
-      className="w-full h-full object-cover"
-    />
+    <div className="flex flex-col items-center space-y-4 bg-gray-100 h-[calc(100vh-65px)] p-4">
+      {/* Video Container */}
+      <Card className="overflow-hidden bg-gray-900 w-full max-w-[400px] h-[calc(100vh-60px)] sm:h-screen relative rounded-lg">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="w-full h-full object-cover"
+        />
 
-    <canvas
-      ref={overlayCanvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none"
-    />
+        <canvas
+          ref={overlayCanvasRef}
+          className="absolute inset-0 w-full h-full pointer-events-none"
+        />
 
-    <canvas
-      ref={debugCanvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none"
-    />
+        <canvas
+          ref={debugCanvasRef}
+          className="absolute inset-0 w-full h-full pointer-events-none"
+        />
 
-    {!videoRef.current?.srcObject && !isLoading && (
-      <div className="absolute inset-0 flex items-center justify-center">
-        <Camera className="h-16 w-16 text-gray-400" />
-      </div>
-    )}
+        {/* Overlay Icons */}
+        {/* <div className="absolute top-4 left-4 flex items-center gap-2">
+          <Info className="h-6 w-6 text-white" />
+        </div> */}
 
-    {isLoading && (
-      <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
-        <Loader2 className="h-8 w-8 text-white animate-spin" />
-      </div>
-    )}
-
-    {videoRef.current?.srcObject && (
-      <>
-        <div className="absolute bottom-0 left-0 w-full px-4 py-2 bg-gray-800">
-          <div className="flex items-center gap-2">
-            <CustomProgress value={progress} className="w-full bg-white" color="#44c569">
-              <div
-                className="absolute text-sm font-medium text-white"
-                style={{ left: `${progress}%`, transform: "translateX(-50%)" }}
-              >
-                {Math.round(progress)}%
-              </div>
-            </CustomProgress>
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
+            <Loader2 className="h-8 w-8 text-white animate-spin" />
           </div>
+        )}
+
+        {videoRef.current?.srcObject && (
+          <>
+            <div className="absolute bottom-0 left-0 w-full px-4 py-2 bg-gray-800">
+              <div className="flex items-center gap-2">
+                <CustomProgress
+                  value={progress}
+                  className="w-full bg-white"
+                  color="#44c569"
+                >
+                  <div
+                    className="absolute text-sm font-medium text-white"
+                    style={{
+                      left: `${progress}%`,
+                      transform: "translateX(-50%)",
+                    }}
+                  >
+                    {Math.round(progress)}%
+                  </div>
+                </CustomProgress>
+              </div>
+            </div>
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={handleCancel}
+              className="absolute top-2 right-4 rounded-full bg-red-600"
+            >
+              <X className="h-4 w-4" color="white" />
+            </Button>
+          </>
+        )}
+      </Card>
+
+      {/* Start Button */}
+      <Button
+        disabled={videoStarted}
+        onClick={startVideo}
+        className="bg-teal-500 text-white py-2 px-8 rounded-lg shadow-md hover:bg-teal-600 focus:ring focus:ring-teal-300"
+      >
+        START
+      </Button>
+
+      {/* Measurements Section */}
+      <div className="flex justify-around w-full bg-white p-4 rounded-lg shadow-md">
+        <div className="flex flex-col items-center">
+          <span className="text-sm text-gray-600">PULSE</span>
+          <span className="text-2xl font-bold text-black">
+            {realTimeHeartRate ? realTimeHeartRate : "--"}
+          </span>
+          <span className="text-xs text-gray-500">bpm</span>
         </div>
-        <Button
-          variant="destructive"
-          size="icon"
-          onClick={handleCancel}
-          className="absolute top-4 right-4 rounded-full bg-red-600"
-        >
-          <X className="h-4 w-4" color="white" />
-        </Button>
-      </>
-    )}
-  </Card>
+      </div>
 
-  {videoRef.current?.srcObject && !conditions.isStable && (
-    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-      <div className="flex items-center gap-2">
-        <AlertCircle className="h-4 w-4 text-yellow-600" />
-        <p className="text-sm text-yellow-800">
-          Keep your device steady for accurate measurements
-        </p>
+      {/* Status Message */}
+      <div className="flex justify-around w-full bg-white px-4 py-6 rounded-lg shadow-sm">
+        {videoRef.current?.srcObject && (
+          <>
+            {!conditions.isStable && (
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <p className="text-sm text-yellow-800">
+                  Keep your device steady for accurate measurements
+                </p>
+              </div>
+            )}
+
+            {conditions.isStable && (!conditions.hasFace || !conditions.isWellPositioned) && (
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <p className="text-sm text-yellow-800">
+                  Position your face within the frame guides
+                </p>
+              </div>
+            )}
+
+            {/* {conditions.isStable &&
+              conditions.hasFace &&
+              !conditions.hasGoodLighting && (
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-yellow-600" />
+                  <p className="text-sm text-yellow-800">
+                    Move to a better lit area
+                  </p>
+                </div>
+              )} */}
+
+            {conditions.isStable &&
+              conditions.hasFace &&
+              conditions.isWellPositioned && (
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-green-800">Measuring...</p>
+                </div>
+              )}
+          </>
+        )}
       </div>
     </div>
-  )}
-
-  {videoRef.current?.srcObject && (!conditions.hasFace || !conditions.isWellPositioned) && (
-    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-      <div className="flex items-center gap-2">
-        <AlertCircle className="h-4 w-4 text-yellow-600" />
-        <p className="text-sm text-yellow-800">
-          Position your face within the frame guides
-        </p>
-      </div>
-    </div>
-  )}
-
-  {videoRef.current?.srcObject && !conditions.hasGoodLighting && (
-    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-      <div className="flex items-center gap-2">
-        <AlertCircle className="h-4 w-4 text-yellow-600" />
-        <p className="text-sm text-yellow-800">Move to a better lit area</p>
-      </div>
-    </div>
-  )}
-
-  {error && (
-    <div className="flex items-center gap-2 text-sm text-red-600 justify-center">
-      <AlertCircle className="h-4 w-4" />
-      <span>{error}</span>
-    </div>
-  )}
-</div>
   );
 }
 
 const estimateBloodGlucose = (
   heartRate: number,
   systolic: number,
-  diastolic: number,
+  diastolic: number
 ): number => {
   if (!heartRate || !systolic || !diastolic) {
     console.log("Missing vital signs for glucose estimation:", {

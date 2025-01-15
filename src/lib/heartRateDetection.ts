@@ -1,4 +1,4 @@
-import * as faceapi from '@vladmandic/face-api';
+import * as faceapi from "@vladmandic/face-api";
 
 interface RGB {
   r: number;
@@ -29,15 +29,15 @@ export class HeartRateDetector {
     detection: faceapi.WithFaceLandmarks<{ detection: faceapi.FaceDetection }>
   ): { signal: number; quality: number } {
     if (!videoElement || !detection || !detection.landmarks?.positions) {
-      console.error('[HeartRate] Missing required parameters or landmarks');
+      console.error("[HeartRate] Missing required parameters or landmarks");
       return { signal: this.lastValidSignal || 0, quality: 0 };
     }
 
     try {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
       if (!context) {
-        console.error('[HeartRate] Failed to get canvas context');
+        console.error("[HeartRate] Failed to get canvas context");
         return { signal: this.lastValidSignal || 0, quality: 0 };
       }
 
@@ -51,8 +51,8 @@ export class HeartRateDetector {
           x: box.x + box.width * 0.2,
           y: box.y - box.height * 0.3,
           width: box.width * 0.6,
-          height: box.height * 0.3
-        }
+          height: box.height * 0.3,
+        },
       ];
 
       let totalGreen = 0;
@@ -63,9 +63,12 @@ export class HeartRateDetector {
         // Validate ROI boundaries
         const validRoi = {
           x: Math.max(0, Math.min(roi.x, videoElement.videoWidth - roi.width)),
-          y: Math.max(0, Math.min(roi.y, videoElement.videoHeight - roi.height)),
+          y: Math.max(
+            0,
+            Math.min(roi.y, videoElement.videoHeight - roi.height)
+          ),
           width: Math.min(roi.width, videoElement.videoWidth - roi.x),
-          height: Math.min(roi.height, videoElement.videoHeight - roi.y)
+          height: Math.min(roi.height, videoElement.videoHeight - roi.y),
         };
 
         if (validRoi.width < 10 || validRoi.height < 10) continue;
@@ -76,15 +79,26 @@ export class HeartRateDetector {
         try {
           context.drawImage(
             videoElement,
-            validRoi.x, validRoi.y, validRoi.width, validRoi.height,
-            0, 0, validRoi.width, validRoi.height
+            validRoi.x,
+            validRoi.y,
+            validRoi.width,
+            validRoi.height,
+            0,
+            0,
+            validRoi.width,
+            validRoi.height
           );
         } catch (error) {
-          console.error('[HeartRate] Error drawing ROI to canvas:', error);
+          console.error("[HeartRate] Error drawing ROI to canvas:", error);
           continue;
         }
 
-        const imageData = context.getImageData(0, 0, validRoi.width, validRoi.height);
+        const imageData = context.getImageData(
+          0,
+          0,
+          validRoi.width,
+          validRoi.height
+        );
         const data = imageData.data;
 
         for (let i = 0; i < data.length; i += 4) {
@@ -100,32 +114,35 @@ export class HeartRateDetector {
             const gRatio = g / sum;
             const bRatio = b / sum;
 
-            const hue = Math.atan2(
-              Math.sqrt(3) * (g - b),
-              2 * r - g - b
-            );
+            const hue = Math.atan2(Math.sqrt(3) * (g - b), 2 * r - g - b);
             const saturation = 1 - (3 * Math.min(r, g, b)) / sum;
 
-            if (this.isValidSkinPixel(rRatio, gRatio, bRatio, hue, saturation)) {
+            if (
+              this.isValidSkinPixel(rRatio, gRatio, bRatio, hue, saturation)
+            ) {
               const greenWeight = this.calculateGreenWeight(r, g, b);
               totalGreen += g * greenWeight;
               totalBrightness += (r + g + b) / (3 * 255);
               validPixels++;
             }
           } catch (error) {
-            console.error('[HeartRate] Error processing pixel:', error);
+            console.error("[HeartRate] Error processing pixel:", error);
             continue;
           }
         }
       }
 
       if (validPixels === 0) {
-        console.warn('[HeartRate] No valid skin pixels detected');
+        console.warn("[HeartRate] No valid skin pixels detected");
         return { signal: this.lastValidSignal || 0, quality: 0 };
       }
 
       const avgBrightness = totalBrightness / validPixels;
-      const signalQuality = this.calculateSignalQuality(validPixels, validPixels * 4, avgBrightness);
+      const signalQuality = this.calculateSignalQuality(
+        validPixels,
+        validPixels * 4,
+        avgBrightness
+      );
       const signal = totalGreen / validPixels;
 
       if (signalQuality > this.minValidSignalQuality) {
@@ -134,7 +151,7 @@ export class HeartRateDetector {
 
       return { signal, quality: signalQuality };
     } catch (error) {
-      console.error('[HeartRate] Error in signal extraction:', error);
+      console.error("[HeartRate] Error in signal extraction:", error);
       return { signal: this.lastValidSignal || 0, quality: 0 };
     }
   }
@@ -147,11 +164,13 @@ export class HeartRateDetector {
     saturation: number
   ): boolean {
     // Multi-dimensional skin detection using RGB and HSV color spaces
-    const rgbValid = (
-      rRatio > 0.3 && rRatio < 0.5 &&
-      gRatio > 0.25 && gRatio < 0.4 &&
-      bRatio > 0.15 && bRatio < 0.35
-    );
+    const rgbValid =
+      rRatio > 0.3 &&
+      rRatio < 0.5 &&
+      gRatio > 0.25 &&
+      gRatio < 0.4 &&
+      bRatio > 0.15 &&
+      bRatio < 0.35;
 
     // HSV-based validation
     const hueValid = hue >= -0.5 && hue <= 0.5;
@@ -191,10 +210,10 @@ export class HeartRateDetector {
 
     const filtered = [];
     // Optimized frequency bands for PPG signal
-    const lowCut = 0.5;  // For capturing lower frequency components
+    const lowCut = 0.5; // For capturing lower frequency components
     const highCut = 4.0; // For better high-frequency detail
-    const lowAlpha = Math.exp(-2 * Math.PI * lowCut / this.samplingRate);
-    const highAlpha = Math.exp(-2 * Math.PI * highCut / this.samplingRate);
+    const lowAlpha = Math.exp((-2 * Math.PI * lowCut) / this.samplingRate);
+    const highAlpha = Math.exp((-2 * Math.PI * highCut) / this.samplingRate);
 
     let lastLow = signal[0] || 0;
     let lastHigh = signal[0] || 0;
@@ -202,7 +221,8 @@ export class HeartRateDetector {
     // Enhanced multi-stage filtering
     for (let i = 0; i < signal.length; i++) {
       // High-pass filter
-      lastHigh = highAlpha * (lastHigh + signal[i] - (signal[Math.max(0, i - 1)] || 0));
+      lastHigh =
+        highAlpha * (lastHigh + signal[i] - (signal[Math.max(0, i - 1)] || 0));
 
       // Low-pass filter
       lastLow = signal[i] + lowAlpha * (lastLow - signal[i]);
@@ -224,9 +244,15 @@ export class HeartRateDetector {
       let sum = 0;
       let count = 0;
 
-      for (let j = Math.max(0, i - windowSize); j <= Math.min(signal.length - 1, i + windowSize); j++) {
+      for (
+        let j = Math.max(0, i - windowSize);
+        j <= Math.min(signal.length - 1, i + windowSize);
+        j++
+      ) {
         // Gaussian-like weighting
-        const weight = Math.exp(-Math.pow(i - j, 2) / (2 * Math.pow(windowSize, 2)));
+        const weight = Math.exp(
+          -Math.pow(i - j, 2) / (2 * Math.pow(windowSize, 2))
+        );
         sum += signal[j] * weight;
         count += weight;
       }
@@ -246,12 +272,12 @@ export class HeartRateDetector {
     );
 
     // Enhanced outlier removal with adaptive thresholding
-    const cleanedSignal = signal.map(x => {
+    const cleanedSignal = signal.map((x) => {
       const zscore = Math.abs((x - mean) / stdDev);
       return zscore > 2.5 ? mean : x; // More aggressive outlier removal
     });
 
-    return cleanedSignal.map(x => (x - mean) / (stdDev || 1));
+    return cleanedSignal.map((x) => (x - mean) / (stdDev || 1));
   }
 
   private findPeaks(signal: number[]): number[] {
@@ -268,13 +294,17 @@ export class HeartRateDetector {
 
       const isLocalMax =
         signal[i] > threshold &&
-        slope1 > 0 && slope2 < 0 && // Slope-based peak detection
+        slope1 > 0 &&
+        slope2 < 0 && // Slope-based peak detection
         signal[i] > signal[i - 1] &&
         signal[i] > signal[i - 2] &&
         signal[i] > signal[i + 1] &&
         signal[i] > signal[i + 2];
 
-      if (isLocalMax && (peaks.length === 0 || i - peaks[peaks.length - 1] >= minPeakDistance)) {
+      if (
+        isLocalMax &&
+        (peaks.length === 0 || i - peaks[peaks.length - 1] >= minPeakDistance)
+      ) {
         peaks.push(i);
       }
     }
@@ -284,7 +314,7 @@ export class HeartRateDetector {
 
   private calculateHeartRate(peaks: number[]): number {
     if (peaks.length < 2) {
-      console.log('[HeartRate] Insufficient peaks for calculation');
+      console.log("[HeartRate] Insufficient peaks for calculation");
       return this.lastHeartRate ?? 0;
     }
 
@@ -319,7 +349,7 @@ export class HeartRateDetector {
 
       if (Math.abs(diff) > maxChange) {
         finalHeartRate = Math.round(
-          this.lastHeartRate + (maxChange * Math.sign(diff))
+          this.lastHeartRate + maxChange * Math.sign(diff)
         );
       }
     }
@@ -332,11 +362,12 @@ export class HeartRateDetector {
 
     // Calculate smoothed heart rate
     const smoothedRate = Math.round(
-      this.heartRateBuffer.reduce((a, b) => a + b, 0) / this.heartRateBuffer.length
+      this.heartRateBuffer.reduce((a, b) => a + b, 0) /
+        this.heartRateBuffer.length
     );
 
     // Add subtle natural variation (±0.5 bpm)
-    const naturalVariation = (Math.random() - 0.5);
+    const naturalVariation = Math.random() - 0.5;
     const finalRate = Math.round(smoothedRate + naturalVariation);
 
     // Ensure final rate is within bounds
@@ -357,11 +388,10 @@ export class HeartRateDetector {
     const pnn50 = this.calculatePNN50(heartRates);
 
     // Weighted combination of different HRV metrics
-    const hrvScore = (
-      0.4 * rmssd +  // RMSSD has highest weight as it's most reliable for short-term measurements
-      0.3 * sdnn +   // SDNN provides overall variability
-      0.3 * pnn50    // pNN50 indicates parasympathetic activity
-    );
+    const hrvScore =
+      0.4 * rmssd + // RMSSD has highest weight as it's most reliable for short-term measurements
+      0.3 * sdnn + // SDNN provides overall variability
+      0.3 * pnn50; // pNN50 indicates parasympathetic activity
 
     // Truncate to 1 decimal place
     return Math.floor(Math.max(20, Math.min(100, hrvScore)) * 10) / 10;
@@ -372,7 +402,7 @@ export class HeartRateDetector {
     let count = 0;
 
     for (let i = 1; i < heartRates.length; i++) {
-      const diff = (60000 / heartRates[i]) - (60000 / heartRates[i - 1]); // Convert to RR intervals
+      const diff = 60000 / heartRates[i] - 60000 / heartRates[i - 1]; // Convert to RR intervals
       sumSquaredDiff += diff * diff;
       count++;
     }
@@ -383,11 +413,13 @@ export class HeartRateDetector {
   private calculateSDNN(heartRates: number[]): number {
     if (heartRates.length < 2) return 0;
 
-    const rrIntervals = heartRates.map(hr => 60000 / hr);
+    const rrIntervals = heartRates.map((hr) => 60000 / hr);
     const mean = rrIntervals.reduce((a, b) => a + b) / rrIntervals.length;
-    const squaredDiffs = rrIntervals.map(rr => Math.pow(rr - mean, 2));
+    const squaredDiffs = rrIntervals.map((rr) => Math.pow(rr - mean, 2));
 
-    return Math.sqrt(squaredDiffs.reduce((a, b) => a + b) / (rrIntervals.length - 1));
+    return Math.sqrt(
+      squaredDiffs.reduce((a, b) => a + b) / (rrIntervals.length - 1)
+    );
   }
 
   private calculatePNN50(heartRates: number[]): number {
@@ -399,7 +431,8 @@ export class HeartRateDetector {
       const rr2 = 60000 / heartRates[i];
       const diff = Math.abs(rr2 - rr1);
 
-      if (diff > 50) { // 50ms threshold for NN50
+      if (diff > 50) {
+        // 50ms threshold for NN50
         nn50Count++;
       }
       totalIntervals++;
@@ -418,17 +451,22 @@ export class HeartRateDetector {
 
   public async update(
     videoElement: HTMLVideoElement,
-    faceDetection: faceapi.WithFaceLandmarks<{ detection: faceapi.FaceDetection }>
+    faceDetection: faceapi.WithFaceLandmarks<{
+      detection: faceapi.FaceDetection;
+    }>
   ): Promise<{ heartRate: number; hrv: number; history: number[] }> {
     try {
-      const { signal, quality } = this.extractSignalFromFace(videoElement, faceDetection);
+      const { signal, quality } = this.extractSignalFromFace(
+        videoElement,
+        faceDetection
+      );
 
       if (signal === 0) {
-        console.log('[HeartRate] No valid signal extracted');
+        console.log("[HeartRate] No valid signal extracted");
         return {
           heartRate: Math.round(this.lastHeartRate ?? 0),
           hrv: 0,
-          history: this.heartRateHistory.map(hr => Math.round(hr))
+          history: this.heartRateHistory.map((hr) => Math.round(hr)),
         };
       }
 
@@ -447,15 +485,14 @@ export class HeartRateDetector {
       return {
         heartRate,
         hrv,
-        history: this.heartRateHistory.map(hr => Math.round(hr))
+        history: this.heartRateHistory.map((hr) => Math.round(hr)),
       };
-
     } catch (error) {
-      console.error('[HeartRate] Error in heart rate detection:', error);
+      console.error("[HeartRate] Error in heart rate detection:", error);
       return {
         heartRate: Math.round(this.lastHeartRate ?? 0),
         hrv: 0,
-        history: this.heartRateHistory.map(hr => Math.round(hr))
+        history: this.heartRateHistory.map((hr) => Math.round(hr)),
       };
     }
   }

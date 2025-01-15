@@ -28,12 +28,6 @@ export interface AverageFinalReport {
   totalReadings: number;
 }
 
-const generateNormalBloodPressure = (): string => {
-  const systolic = Math.floor(Math.random() * (120 - 110 + 1) + 110); // 110-120
-  const diastolic = Math.floor(Math.random() * (80 - 70 + 1) + 70);   // 70-80
-  return `${systolic}/${diastolic}`;
-};
-
 export default function VideoCheckIn({ onComplete, onCancel }: VideoCheckInProps) {
   const [isStreamActive, setIsStreamActive] = useState(false);
   const [heartRate, setHeartRate] = useState<string | number>("--");
@@ -44,7 +38,7 @@ export default function VideoCheckIn({ onComplete, onCancel }: VideoCheckInProps
     setIsStreamActive(false);
     setAnalysisData({
       heartRate: finalReport.averageHeartRate,
-      bp: generateNormalBloodPressure(),
+      bp: finalReport.averageBloodPressure,
       hrv: finalReport.averageHRV,
       bloodGlucose: finalReport.averageBloodGlucose,
       depressionProbability: finalReport.confidence
@@ -91,16 +85,16 @@ export default function VideoCheckIn({ onComplete, onCancel }: VideoCheckInProps
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-0 sm:p-4 z-50">
-      <div className="w-full h-full sm:h-auto sm:max-w-5xl bg-black rounded-lg overflow-hidden relative">
+      <div className="w-[400px] h-full sm:h-auto sm:max-w-5xl bg-black rounded-lg overflow-hidden relative">
         <div className="h-full sm:h-auto sm:aspect-video relative">
-          <VideoStream
+          {/* <VideoStream
             onStreamStart={handleStreamStart}
             onComplete={handleStreamComplete}
             onVitalsUpdate={handleVitalsUpdate}
             onCancel={onCancel}
-          />
+          /> */}
 
-          <div className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2">
+          {/* <div className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2">
             <Card className="bg-black/50 backdrop-blur-sm border-none">
               <div className="p-1.5 sm:p-3 flex items-center gap-1.5 sm:gap-2">
                 <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />
@@ -114,7 +108,7 @@ export default function VideoCheckIn({ onComplete, onCancel }: VideoCheckInProps
                 </div>
               </div>
             </Card>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

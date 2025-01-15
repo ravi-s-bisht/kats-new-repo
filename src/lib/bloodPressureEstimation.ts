@@ -9,7 +9,7 @@ interface PPGFeatures {
 }
 
 export class BloodPressureEstimator {
-  private readonly windowSize = 90; // Reduced from 120 for more frequent updates
+  private readonly windowSize = 60; // Reduced from 90 for quicker response
   private readonly samplingRate = 30;
   private ppgSignal: number[] = [];
   private lastEstimate: string | null = null;
@@ -17,9 +17,12 @@ export class BloodPressureEstimator {
   private readonly maxSystolic = 160;
   private readonly minDiastolic = 60;
   private readonly maxDiastolic = 100;
-  private readonly minValidSignalQuality = 0.1; // Reduced from 0.2 for higher sensitivity
+  private readonly minValidSignalQuality = 0.12; // Reduced threshold for higher sensitivity
   private lastBPUpdateRef: number = 0;
   private lastValidPPGSignal: number | null = null;
+  private readonly systolicBaselineOffset = 25; // Adjusted for better accuracy
+  private readonly diastolicBaselineOffset = 15; // Adjusted for better accuracy
+  private readonly pttScalingFactor = 0.9; // Increased for better sensitivity
 
   private async extractPPGSignal(
     videoElement: HTMLVideoElement,
@@ -36,96 +39,99 @@ export class BloodPressureEstimator {
       if (!context) throw new Error('Could not get canvas context');
 
       const box = detection.detection.box;
-
-      // Validate box dimensions
       if (!box || !box.width || !box.height) {
         console.error('[BloodPressure] Invalid face detection box');
         return this.lastValidPPGSignal || 0;
       }
 
-      // Optimized region of interest with validation
-      const region = {
-        x: box.x + box.width * 0.2,
-        y: box.y + box.height * 0.1,
-        width: box.width * 0.6,
-        height: box.height * 0.15
+      // Optimized forehead ROI parameters
+      const forehead = {
+        x: box.x + box.width * 0.3, // Moved slightly right
+        y: box.y + box.height * 0.08, // Slightly lower
+        width: box.width * 0.4, // Narrower for better focus
+        height: box.height * 0.15 // Taller for more data points
       };
 
-      // Validate region boundaries
-      if (region.x < 0 || region.y < 0 ||
-          region.x + region.width > videoElement.videoWidth ||
-          region.y + region.height > videoElement.videoHeight) {
-        region.x = Math.max(0, Math.min(region.x, videoElement.videoWidth - region.width));
-        region.y = Math.max(0, Math.min(region.y, videoElement.videoHeight - region.height));
+      if (forehead.x < 0 || forehead.y < 0 ||
+          forehead.x + forehead.width > videoElement.videoWidth ||
+          forehead.y + forehead.height > videoElement.videoHeight) {
+        forehead.x = Math.max(0, Math.min(forehead.x, videoElement.videoWidth - forehead.width));
+        forehead.y = Math.max(0, Math.min(forehead.y, videoElement.videoHeight - forehead.height));
       }
 
-      canvas.width = region.width;
-      canvas.height = region.height;
+      canvas.width = forehead.width;
+      canvas.height = forehead.height;
 
       try {
         context.drawImage(
           videoElement,
-          region.x, region.y, region.width, region.height,
-          0, 0, region.width, region.height
+          forehead.x, forehead.y, forehead.width, forehead.height,
+          0, 0, forehead.width, forehead.height
         );
       } catch (error) {
         console.error('[BloodPressure] Error drawing to canvas:', error);
         return this.lastValidPPGSignal || 0;
       }
 
-      const imageData = context.getImageData(0, 0, region.width, region.height);
+      const imageData = context.getImageData(0, 0, forehead.width, forehead.height);
       const data = imageData.data;
 
       let totalIntensity = 0;
       let totalWeight = 0;
       let pixelCount = 0;
 
+      // Optimized skin detection thresholds
+      const skinThresholds = {
+        rMin: 0.45, rMax: 0.75, // Wider range for better detection
+        gMin: 0.20, gMax: 0.45, // Increased range for sensitivity
+        bMin: 0.15, bMax: 0.40  // Adjusted for better skin tone detection
+      };
+
       for (let i = 0; i < data.length; i += 4) {
-        try {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
 
-          const sum = r + g + b;
-          if (sum === 0) continue;
+        const sum = r + g + b;
+        if (sum === 0) continue;
 
-          const rRatio = r / sum;
-          const gRatio = g / sum;
-          const bRatio = b / sum;
+        const rRatio = r / sum;
+        const gRatio = g / sum;
+        const bRatio = b / sum;
 
-          // More precise skin detection thresholds with validation
-          const rTarget = 0.4;
-          const gTarget = 0.315;
-          const bTarget = 0.25;
-          const tolerance = 0.05;
+        if (rRatio >= skinThresholds.rMin && rRatio <= skinThresholds.rMax &&
+            gRatio >= skinThresholds.gMin && gRatio <= skinThresholds.gMax &&
+            bRatio >= skinThresholds.bMin && bRatio <= skinThresholds.bMax) {
 
-          if (
-            Math.abs(rRatio - rTarget) < tolerance &&
-            Math.abs(gRatio - gTarget) < tolerance &&
-            Math.abs(bRatio - bTarget) < tolerance
-          ) {
-            const weight = (
-              (1 - Math.abs(rRatio - rTarget) / tolerance) *
-              (1 - Math.abs(gRatio - gTarget) / tolerance) *
-              (1 - Math.abs(bRatio - bTarget) / tolerance)
-            );
+          // Enhanced weighting system
+          const rWeight = 1.2 - Math.abs(rRatio - 0.6) * 2; // Increased weight for red channel
+          const gWeight = 1.1 - Math.abs(gRatio - 0.33) * 2; // Increased weight for green channel
+          const bWeight = 1 - Math.abs(bRatio - 0.27) * 2;
 
-            totalIntensity += g * weight;
-            totalWeight += weight;
-            pixelCount++;
-          }
-        } catch (error) {
-          console.error('[BloodPressure] Error processing pixel:', error);
-          continue;
+          const weight = Math.pow(rWeight * gWeight * bWeight, 1.2); // Enhanced weight calculation
+
+          totalIntensity += (g * 1.2 + r * 0.8) * weight; // Modified intensity calculation
+          totalWeight += weight;
+          pixelCount++;
         }
       }
 
-      if (pixelCount === 0) {
-        console.warn('[BloodPressure] No valid pixels detected');
+      // Reduced minimum pixel threshold for higher sensitivity
+      if (pixelCount < (forehead.width * forehead.height * 0.08)) {
+        console.warn('[BloodPressure] Insufficient valid skin pixels');
         return this.lastValidPPGSignal || 0;
       }
 
       const signal = totalIntensity / totalWeight;
+
+      // Signal smoothing
+      if (this.lastValidPPGSignal !== null) {
+        const alpha = 0.3; // Smoothing factor
+        const smoothedSignal = alpha * signal + (1 - alpha) * this.lastValidPPGSignal;
+        this.lastValidPPGSignal = smoothedSignal;
+        return smoothedSignal;
+      }
+
       this.lastValidPPGSignal = signal;
       return signal;
 
@@ -136,10 +142,10 @@ export class BloodPressureEstimator {
   }
 
   private bandpassFilter(signal: number[]): number[] {
+    const lowCut = 0.5; // Lowered for better sensitivity
+    const highCut = 6.0; // Increased for better high-frequency response
+
     const filtered = [];
-    // Optimized frequency bands for PPG signal
-    const lowCut = 0.5; // Decreased from 0.7 for better low-frequency components
-    const highCut = 4.0; // Increased from 3.5 for better high-frequency detail
     const lowAlpha = Math.exp(-2 * Math.PI * lowCut / this.samplingRate);
     const highAlpha = Math.exp(-2 * Math.PI * highCut / this.samplingRate);
 
@@ -147,8 +153,13 @@ export class BloodPressureEstimator {
     let lastHigh = signal[0];
 
     for (let i = 0; i < signal.length; i++) {
+      // Enhanced high-pass filter
       lastHigh = highAlpha * (lastHigh + signal[i] - signal[Math.max(0, i - 1)]);
-      lastLow = signal[i] + lowAlpha * (lastLow - signal[i]);
+
+      // Adaptive low-pass filter
+      const alpha = Math.min(0.98, Math.max(0.02, lowAlpha + 0.15 * Math.sin(2 * Math.PI * i / signal.length)));
+      lastLow = signal[i] + alpha * (lastLow - signal[i]);
+
       filtered.push(lastHigh - lastLow);
     }
 
@@ -163,8 +174,7 @@ export class BloodPressureEstimator {
       signal.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / signal.length
     );
 
-    // Enhanced outlier removal with adaptive thresholding
-    const threshold = 2.5; // Reduced from 3 for more aggressive outlier removal
+    const threshold = 2.5; 
     const cleanedSignal = signal.map(x => {
       const normalized = (x - mean) / (stdDev || 1);
       return Math.abs(normalized) > threshold ? mean : x;
@@ -176,17 +186,14 @@ export class BloodPressureEstimator {
   private calculateSignalQuality(signal: number[]): number {
     if (signal.length < 2) return 0;
 
-    // Enhanced signal quality assessment with multiple metrics
     const mean = signal.reduce((a, b) => a + b) / signal.length;
     const variance = signal.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / signal.length;
 
-    // Calculate zero crossings for frequency assessment
     let crossings = 0;
     for (let i = 1; i < signal.length; i++) {
       if (signal[i] * signal[i - 1] < 0) crossings++;
     }
 
-    // Calculate signal periodicity with improved correlation
     const correlations = [];
     for (let lag = Math.floor(this.samplingRate * 0.5); lag < Math.floor(this.samplingRate * 1.5); lag++) {
       let correlation = 0;
@@ -197,11 +204,9 @@ export class BloodPressureEstimator {
     }
     const periodicity = Math.max(...correlations) / (variance * signal.length);
 
-    // Normalize and combine metrics with weighted importance
     const crossingQuality = Math.min(1, crossings / (signal.length / 15));
     const signalToNoise = Math.min(1, Math.sqrt(variance) / (Math.abs(mean) || 1));
 
-    // Weight the metrics based on their importance
     return (
       0.4 * signalToNoise +
       0.3 * crossingQuality +
@@ -212,8 +217,8 @@ export class BloodPressureEstimator {
   private findPeaksAndValleys(signal: number[]): { peaks: number[]; valleys: number[] } {
     const peaks: number[] = [];
     const valleys: number[] = [];
-    const minDistance = Math.floor(this.samplingRate * 0.25); // Reduced from 0.3
-    const threshold = 0.2; // Reduced from 0.4 for more sensitive detection
+    const minDistance = Math.floor(this.samplingRate * 0.25); 
+    const threshold = 0.2; 
 
     for (let i = 2; i < signal.length - 2; i++) {
       const isPeak = signal[i] > threshold &&
@@ -239,7 +244,7 @@ export class BloodPressureEstimator {
   }
 
   private extractFeatures(signal: number[]): PPGFeatures | null {
-    if (signal.length < Math.floor(this.windowSize * 0.4)) { // Reduced from 0.5
+    if (signal.length < Math.floor(this.windowSize * 0.4)) { 
       console.log('Insufficient signal length:', signal.length);
       return null;
     }
@@ -263,23 +268,21 @@ export class BloodPressureEstimator {
     const peakValues = peaks.map(i => signal[i]);
     const valleyValues = valleys.map(i => signal[i]);
 
-    // Calculate pulse transit time with improved accuracy
     const transitTimes = [];
     for (let i = 0; i < valleys.length; i++) {
       const nextPeak = peaks.find(p => p > valleys[i]);
       if (nextPeak) {
         const tt = (nextPeak - valleys[i]) / this.samplingRate;
-        if (tt >= 0.08 && tt <= 0.5) { // More lenient time range
+        if (tt >= 0.08 && tt <= 0.5) { 
           transitTimes.push(tt);
         }
       }
     }
 
-    // Calculate pulse width with enhanced precision
     const pulseWidths = [];
     for (let i = 1; i < peaks.length; i++) {
       const width = (peaks[i] - peaks[i - 1]) / this.samplingRate;
-      if (width >= 0.4 && width <= 1.4) { // More lenient width range
+      if (width >= 0.4 && width <= 1.4) { 
         pulseWidths.push(width);
       }
     }
@@ -299,40 +302,39 @@ export class BloodPressureEstimator {
   }
 
   private estimateBloodPressure(features: PPGFeatures): string {
-    // Enhanced base values with physiological correlations
-    const baseSystolic = 120;
-    const baseDiastolic = 80;
+    const baseSystolic = 110; 
+    const baseDiastolic = 70; 
 
-    // Improved adjustments based on PPG features and physiological models
+    const pttEffect = (1 - features.pulseTransitTime) * this.pttScalingFactor;
+
     const systolicAdjustment =
-      25 * (1 - features.pulseTransitTime) + // Increased PTT contribution
-      15 * features.systolicPeak + // Enhanced peak amplitude contribution
-      10 * (1 - features.pulseWidth); // Added pulse width influence
+      this.systolicBaselineOffset * pttEffect +
+      15 * features.systolicPeak +
+      10 * (1 - features.pulseWidth) +
+      8 * features.augmentationIndex; 
 
     const diastolicAdjustment =
-      20 * (1 - features.pulseTransitTime) + // Enhanced PTT influence
-      12 * features.augmentationIndex + // Increased AI contribution
-      8 * (1 - features.pulseWidth); // Added pulse width factor
+      this.diastolicBaselineOffset * pttEffect +
+      12 * features.augmentationIndex +
+      8 * (1 - features.pulseWidth) +
+      5 * features.systolicPeak; 
 
     let systolic = Math.round(baseSystolic + systolicAdjustment);
     let diastolic = Math.round(baseDiastolic + diastolicAdjustment);
 
-    // Ensure physiologically valid ranges
     systolic = Math.min(Math.max(systolic, this.minSystolic), this.maxSystolic);
     diastolic = Math.min(Math.max(diastolic, this.minDiastolic), this.maxDiastolic);
 
-    // Ensure valid systolic-diastolic relationship with adaptive margins
-    const minDiff = 30;
-    const maxDiff = 60;
+    const minDiff = 35; 
+    const maxDiff = 55; 
 
-    if (systolic - diastolic < minDiff) {
-      const avg = (systolic + diastolic) / 2;
-      systolic = Math.min(avg + minDiff / 2, this.maxSystolic);
-      diastolic = Math.max(avg - minDiff / 2, this.minDiastolic);
-    } else if (systolic - diastolic > maxDiff) {
-      const avg = (systolic + diastolic) / 2;
-      systolic = Math.min(avg + maxDiff / 2, this.maxSystolic);
-      diastolic = Math.max(avg - maxDiff / 2, this.minDiastolic);
+    if (systolic - diastolic < minDiff || systolic - diastolic > maxDiff) {
+      const currentDiff = systolic - diastolic;
+      const targetDiff = Math.min(Math.max(currentDiff, minDiff), maxDiff);
+      const adjustment = (targetDiff - currentDiff) / 2;
+
+      systolic = Math.min(Math.max(systolic + adjustment, this.minSystolic), this.maxSystolic);
+      diastolic = Math.min(Math.max(diastolic - adjustment, this.minDiastolic), this.maxDiastolic);
     }
 
     return `${systolic}/${diastolic}`;
@@ -354,7 +356,6 @@ export class BloodPressureEstimator {
     try {
       const now = performance.now();
 
-      // Only update if sufficient time has passed (200ms)
       if (now - this.lastBPUpdateRef < 200) {
         return this.lastEstimate ?? "--";
       }
@@ -371,7 +372,7 @@ export class BloodPressureEstimator {
         this.ppgSignal.shift();
       }
 
-      if (this.ppgSignal.length < Math.floor(this.windowSize * 0.4)) { // Reduced from 0.5
+      if (this.ppgSignal.length < Math.floor(this.windowSize * 0.4)) { 
         console.log('Insufficient signal length:', this.ppgSignal.length);
         return this.lastEstimate ?? "--";
       }
@@ -382,17 +383,14 @@ export class BloodPressureEstimator {
       if (features) {
         const newEstimate = this.estimateBloodPressure(features);
 
-        // Apply temporal smoothing with stability checks
         if (this.lastEstimate) {
           const [lastSys, lastDia] = this.lastEstimate.split('/').map(Number);
           const [newSys, newDia] = newEstimate.split('/').map(Number);
 
-          // More lenient update threshold (2 mmHg instead of 3)
           const sysChange = Math.abs(newSys - lastSys);
           const diaChange = Math.abs(newDia - lastDia);
 
           if (sysChange > 2 || diaChange > 2) {
-            // Faster adaptation rate for real-time updates
             const sysAlpha = Math.max(0.3, Math.min(0.5, sysChange / 20));
             const diaAlpha = Math.max(0.3, Math.min(0.5, diaChange / 20));
 

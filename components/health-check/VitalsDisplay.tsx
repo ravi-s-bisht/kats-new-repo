@@ -2,8 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/src/lib/utils";
-import { Heart, Activity, LineChart, Droplet, Loader2 } from "lucide-react";
+import { Heart, Activity, LineChart, Droplet, Loader2, Video } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "../ui/button";
 
 export interface VitalsData {
   bp: string;
@@ -15,6 +16,7 @@ export interface VitalsData {
 
 interface VitalsDisplayProps {
   data?: VitalsData | null;
+  handleReset: () => void;
   isLoading?: boolean;
 }
 
@@ -74,7 +76,7 @@ const VitalSign = ({
   </motion.div>
 );
 
-export default function VitalsDisplay({ data, isLoading = false }: VitalsDisplayProps) {
+export default function VitalsDisplay({ data, isLoading = false, handleReset }: VitalsDisplayProps) {
   // Helper function to determine BP status color
   const getBPStatusColor = (bp: string) => {
     if (!bp || bp === "--") return "text-gray-400";
@@ -121,12 +123,12 @@ export default function VitalsDisplay({ data, isLoading = false }: VitalsDisplay
 
   return (
     <motion.div 
-      className="space-y-3 sm:space-y-6"
+      className="space-y-3 sm:space-y-6 p-5 sm:mt-6 mt-5 pb-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-1 sm:gap-6 text-center justify-center items-center">
         {/* Physical Vitals Section */}
         <Card className="overflow-hidden">
           <CardHeader className="p-3 sm:p-6">
@@ -182,7 +184,7 @@ export default function VitalsDisplay({ data, isLoading = false }: VitalsDisplay
         </Card>
 
         {/* Mental Health Section */}
-        <Card className="overflow-hidden">
+        {/* <Card className="overflow-hidden">
           <CardHeader className="p-3 sm:p-6">
             <CardTitle className="text-base sm:text-lg font-semibold text-gray-900">
               Mental Health Analysis
@@ -207,7 +209,7 @@ export default function VitalsDisplay({ data, isLoading = false }: VitalsDisplay
                     {data?.depressionProbability !== undefined && data?.depressionProbability !== "--" ? `Coming Soon` : "Coming Soon"}
                   </motion.dd>
                 </AnimatePresence>
-                {/* <div className="mt-3 sm:mt-4 bg-gray-200 rounded-full h-1.5 sm:h-2 overflow-hidden">
+                <div className="mt-3 sm:mt-4 bg-gray-200 rounded-full h-1.5 sm:h-2 overflow-hidden">
                   <div 
                     className={cn(
                       "h-full rounded-full transition-all duration-500 ease-in-out",
@@ -215,8 +217,8 @@ export default function VitalsDisplay({ data, isLoading = false }: VitalsDisplay
                     )}
                     style={{ width: typeof data?.depressionProbability === 'number' ? `${data.depressionProbability}%` : '0%' }}
                   />
-                </div> */}
-                {/* <motion.p 
+                </div>
+                <motion.p 
                   className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-gray-600"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -228,15 +230,22 @@ export default function VitalsDisplay({ data, isLoading = false }: VitalsDisplay
                       : Number(data.depressionProbability) < 70
                       ? "Moderate risk of depression"
                       : "High risk of depression"}
-                </motion.p> */}
+                </motion.p>
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
       <div className="text-center text-xs text-gray-500">
         Note: These measurements are derived from video analysis and should be verified by a healthcare professional.
       </div>
+
+      <div className="flex justify-center gap-4">
+            <Button variant="outline" onClick={() => handleReset()} className="gap-2">
+              <Video className="h-4 w-4" />
+              New Analysis
+            </Button>
+          </div>
     </motion.div>
   );
 }

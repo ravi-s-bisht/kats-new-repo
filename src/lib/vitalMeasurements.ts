@@ -8,8 +8,8 @@ interface VitalReading {
   
   export class VitalMeasurements {
     private readings: VitalReading[] = [];
-    private readonly measurementInterval = 2000; // Take measurements every 2 seconds
-    private readonly minReadings = 15; // Minimum readings needed for valid average
+    private readonly measurementInterval = 1500; // Take measurements every 2 seconds
+    private readonly minReadings = 3; // Minimum readings needed for valid average
     private lastMeasurementTime = 0;
   
     public addReading(reading: Omit<VitalReading, 'timestamp'>) {
