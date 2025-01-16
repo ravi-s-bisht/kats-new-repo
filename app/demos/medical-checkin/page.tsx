@@ -180,7 +180,7 @@ export default function Home() {
       )}
 
       {currentStep === 3 && !isAnalyzing && analysisData && !showAuthPrompt && (
-        <div className="space-y-6">
+        <div className="space-y-6 mt-8">
           <div className="text-center">
             <div className="flex justify-center mb-4">
               <div className="bg-green-100 p-3 rounded-full">

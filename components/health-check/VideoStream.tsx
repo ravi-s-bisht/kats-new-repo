@@ -16,6 +16,7 @@ import { VitalMeasurements } from "@/src/lib/vitalMeasurements";
 import { motion } from "framer-motion";
 import { AverageFinalReport } from "./VideoCheckIn";
 import { CustomProgress } from "../ui/CustomProgress";
+import * as faceapi from '@vladmandic/face-api';
 
 interface VideoStreamProps {
   onStreamStart: (stream: MediaStream | null) => void;
@@ -61,6 +62,7 @@ export default function VideoStream({
   const [realTimeHeartRate, setRealTimeHeartRate] = useState<number | null>(
     null
   );
+  const detectedFaceOverlayRef = useRef<HTMLCanvasElement>(null);
   const [videoStarted, setVideoStarted] = useState(false);
   const vitalMeasurementsRef = useRef<VitalMeasurements>(
     new VitalMeasurements()
@@ -112,7 +114,7 @@ export default function VideoStream({
     }
 
     const averageBrightness = totalBrightness / (frame.data.length / 4) / 255;
-    return averageBrightness > 0.2 && averageBrightness < 0.8; // Acceptable brightness range
+    return averageBrightness > 0.5 && averageBrightness < 0.8; // Acceptable brightness range
   };
 
   const drawDebugInfo = (
@@ -165,13 +167,80 @@ export default function VideoStream({
     return brightness / (data.length / 4) / 255;
   };
 
+  function drawFaceMapping(
+    video: HTMLVideoElement,
+    detection: faceapi.WithFaceLandmarks<{
+      detection: faceapi.FaceDetection;
+    }>,
+    detectedFaceOverlayRef: React.RefObject<HTMLCanvasElement>
+  ): void {
+    const canvas = detectedFaceOverlayRef.current;
+    if (!canvas || !video || !detection) return;
+  
+    const context = canvas.getContext("2d");
+    if (!context) return;
+  
+    // Set canvas dimensions to match the video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+  
+    // Clear previous drawings
+    context.clearRect(0, 0, canvas.width, canvas.height);
+  
+    // Draw the detected face box
+    const box = detection.detection.box;
+    context.strokeStyle = "red";
+    context.lineWidth = 2;
+    context.strokeRect(box.x, box.y, box.width, box.height);
+  
+    // Draw landmarks
+    context.fillStyle = "blue";
+    detection.landmarks.positions.forEach((point) => {
+      context.beginPath();
+      context.arc(point.x, point.y, 2, 0, 2 * Math.PI);
+      context.fill();
+    });
+  
+    // Calculate guidance box using the same logic as `isWellPositioned`
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const videoWidth = video.videoWidth * devicePixelRatio;
+    const videoHeight = video.videoHeight * devicePixelRatio;
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    const padding = videoWidth * 0.05;
+  
+    const guidanceBox = isMobile
+      ? {
+          left: videoWidth * 0.15 - padding,
+          right: videoWidth * 0.85 + padding,
+          top: videoHeight * 0.15 - padding,
+          bottom: videoHeight * 0.85 + padding,
+        }
+      : {
+          left: videoWidth * 0.15,
+          right: videoWidth * 0.85,
+          top: videoHeight * 0.15,
+          bottom: videoHeight * 0.88,
+        };
+  
+    // Draw the guidance box
+    context.strokeStyle = "green";
+    context.lineWidth = 2;
+    context.strokeRect(
+      guidanceBox.left / devicePixelRatio,
+      guidanceBox.top / devicePixelRatio,
+      (guidanceBox.right - guidanceBox.left) / devicePixelRatio,
+      (guidanceBox.bottom - guidanceBox.top) / devicePixelRatio
+    );
+  }
+  
+   
+
   const processFrame = async () => {
     if (
       !videoRef.current ||
       !heartRateDetectorRef.current ||
       !bloodPressureEstimatorRef.current ||
-      !overlayCanvasRef.current ||
-      !debugCanvasRef.current
+      !overlayCanvasRef.current
     ) {
       console.log("Missing required refs for vital detection");
       return;
@@ -216,19 +285,47 @@ export default function VideoStream({
     const hasGoodLighting = checkLightingQuality(currentFrameData);
 
     try {
-      const faceDetection = await detectFace(videoRef.current);
+      const faceDetection = await detectFace(videoRef.current, detectedFaceOverlayRef, drawFaceMapping);
       const hasFace = !!faceDetection;
 
-      // Check if face is well positioned within the guidance box
       let isWellPositioned = false;
       if (faceDetection?.detection) {
-        const faceBox = faceDetection.detection.box;
-        const boxRegion = {
-          left: videoRef.current.videoWidth * 0.3,
-          right: videoRef.current.videoWidth * 0.7,
-          top: videoRef.current.videoHeight * 0.2,
-          bottom: videoRef.current.videoHeight * 0.8,
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        const videoWidth = videoRef.current.videoWidth * devicePixelRatio;
+        const videoHeight = videoRef.current.videoHeight * devicePixelRatio;
+
+        const faceBox = {
+          x:
+            (faceDetection.detection.box.x / videoRef.current.videoWidth) *
+            videoWidth,
+          y:
+            (faceDetection.detection.box.y / videoRef.current.videoHeight) *
+            videoHeight,
+          width:
+            (faceDetection.detection.box.width / videoRef.current.videoWidth) *
+            videoWidth,
+          height:
+            (faceDetection.detection.box.height /
+              videoRef.current.videoHeight) *
+            videoHeight,
         };
+
+        const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+        const padding = videoWidth * 0.05;
+
+        const boxRegion = isMobile
+          ? {
+              left: videoWidth * 0.15 - padding,
+              right: videoWidth * 0.85 + padding,
+              top: videoHeight * 0.15 - padding,
+              bottom: videoHeight * 0.85 + padding,
+            }
+          : {
+              left: videoWidth * 0.15,
+              right: videoWidth * 0.85,
+              top: videoHeight * 0.15,
+              bottom: videoHeight * 0.88,
+            };
 
         isWellPositioned =
           faceBox.x > boxRegion.left &&
@@ -236,7 +333,6 @@ export default function VideoStream({
           faceBox.y > boxRegion.top &&
           faceBox.y + faceBox.height < boxRegion.bottom;
 
-        console.log("=====================");
         console.log("Face Box:", faceBox);
         console.log("Guidance Box Region:", boxRegion);
       }
@@ -250,7 +346,7 @@ export default function VideoStream({
       });
 
       // Handle progress tracking
-      const allConditionsMet = isStable && hasFace && isWellPositioned;
+      const allConditionsMet = hasFace && isWellPositioned && hasGoodLighting;
 
       if (timerRef.current) {
         const duration = 30000; // 60 seconds
@@ -296,7 +392,7 @@ export default function VideoStream({
               ((lastElapsedTimeRef.current / duration) * 100).toFixed(1) + "%",
               "- Waiting for:",
               {
-                stability: !isStable,
+                // stability: !isStable,
                 face: !hasFace,
                 lighting: !hasGoodLighting,
                 position: !isWellPositioned,
@@ -317,16 +413,16 @@ export default function VideoStream({
         (brightness * 100).toFixed(1) + "%"
       );
 
-      const debugCtx = debugCanvasRef.current.getContext("2d");
-      if (debugCtx) {
-        drawDebugInfo(
-          debugCtx,
-          faceDetection,
-          videoRef.current.videoWidth,
-          videoRef.current.videoHeight,
-          brightness
-        );
-      }
+      // const debugCtx = debugCanvasRef?.current.getContext("2d");
+      // if (debugCtx) {
+      //   drawDebugInfo(
+      //     debugCtx,
+      //     faceDetection,
+      //     videoRef.current.videoWidth,
+      //     videoRef.current.videoHeight,
+      //     brightness
+      //   );
+      // }
 
       const overlayCtx = overlayCanvasRef.current.getContext("2d");
       if (overlayCtx) {
@@ -344,7 +440,8 @@ export default function VideoStream({
           console.log("[Frame] Processing vital signs...");
           const heartRateData = await heartRateDetectorRef.current.update(
             videoRef.current,
-            faceDetection
+            faceDetection,
+            detectedFaceOverlayRef
           );
 
           if (heartRateData) {
@@ -360,7 +457,7 @@ export default function VideoStream({
                 }
                 const bp = await bloodPressureEstimatorRef.current.update(
                   videoRef.current,
-                  faceDetection
+                  faceDetection,
                 );
                 console.log("Blood pressure reading:", bp);
                 lastBPUpdateRef.current = now;
@@ -463,7 +560,20 @@ export default function VideoStream({
     stopVideo();
     onCancel?.();
     handleReset();
-  };
+  
+    // Clear overlay canvas
+    if (overlayCanvasRef.current) {
+      const overlayContext = overlayCanvasRef.current.getContext("2d");
+      if (overlayContext) {
+        overlayContext.clearRect(
+          0,
+          0,
+          overlayCanvasRef.current.width,
+          overlayCanvasRef.current.height
+        );
+      }
+    }
+  };  
 
   const startVideo = async () => {
     console.log("Starting video stream...");
@@ -501,10 +611,7 @@ export default function VideoStream({
 
       console.log("Camera access granted");
 
-      if (
-        videoRef.current &&
-        overlayCanvasRef.current
-      ) {
+      if (videoRef.current && overlayCanvasRef.current) {
         videoRef.current.srcObject = stream;
         onStreamStart(stream);
 
@@ -568,10 +675,26 @@ export default function VideoStream({
     videoHeight: number,
     timestamp: number
   ) => {
+    // const { boxWidth, boxHeight } = maintainAspectRatio(videoWidth, videoHeight);
+    const isPortrait = videoHeight > videoWidth;
+
+    // const centerX = ctx.canvas.width / 2;
+    // const centerY = ctx.canvas.height / 2;
+
+    // const x = centerX - boxWidth / 2;
+    // const y = centerY - boxHeight / 2;
+
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+    // Maintain correct orientation for guidance box
+    ctx.save();
+
     // Maintain a fixed aspect ratio for the guidance box (e.g., 4:3)
-    const boxAspectRatio = 16 / 9;
+    let boxAspectRatio = 16 / 9;
+    if (isPortrait) {
+      boxAspectRatio = 9 / 16;
+    }
+
     let boxWidth = ctx.canvas.width * 0.7; // Scale relative to canvas width
     let boxHeight = boxWidth / boxAspectRatio;
 
@@ -592,8 +715,15 @@ export default function VideoStream({
     ctx.lineWidth = lineWidth;
 
     let isFaceAligned = false;
+    // Ensure `faceBox` coordinates are scaled to the canvas dimensions
     if (face?.detection) {
-      const faceBox = face.detection.box;
+      const faceBox = {
+        x: (face.detection.box.x * ctx.canvas.width) / videoWidth,
+        y: (face.detection.box.y * ctx.canvas.height) / videoHeight,
+        width: (face.detection.box.width * ctx.canvas.width) / videoWidth,
+        height: (face.detection.box.height * ctx.canvas.height) / videoHeight,
+      };
+
       const boxRegion = {
         left: x,
         right: x + boxWidth,
@@ -601,11 +731,22 @@ export default function VideoStream({
         bottom: y + boxHeight,
       };
 
+      // Check if the face box fits within the guidance box with a tolerance margin
+      const marginX = boxWidth * 0.1;
+      const marginY = boxHeight * 0.1;
+
       isFaceAligned =
-        faceBox.x > boxRegion.left - boxWidth * 0.1 &&
-        faceBox.x + faceBox.width < boxRegion.right + boxWidth * 0.1 &&
-        faceBox.y > boxRegion.top - boxHeight * 0.1 &&
-        faceBox.y + faceBox.height < boxRegion.bottom + boxHeight * 0.1;
+        faceBox.x > boxRegion.left - marginX &&
+        faceBox.x + faceBox.width < boxRegion.right + marginX &&
+        faceBox.y > boxRegion.top - marginY &&
+        faceBox.y + faceBox.height < boxRegion.bottom + marginY;
+    }
+
+    // Debugging: Log box dimensions and face alignment status
+    console.debug("Box Dimensions:", { boxWidth, boxHeight, x, y });
+    console.debug("Is Face Aligned:", isFaceAligned);
+    if (face?.detection) {
+      console.debug("Face Detection Box:", face.detection.box);
     }
 
     ctx.strokeStyle = isFaceAligned
@@ -704,6 +845,11 @@ export default function VideoStream({
         />
 
         <canvas
+          ref={detectedFaceOverlayRef}
+          className="absolute inset-0 w-full h-full pointer-events-none"
+        />
+
+        <canvas
           ref={debugCanvasRef}
           className="absolute inset-0 w-full h-full pointer-events-none"
         />
@@ -776,7 +922,7 @@ export default function VideoStream({
       <div className="flex justify-around w-full bg-white px-4 py-6 rounded-lg shadow-sm">
         {videoRef.current?.srcObject && (
           <>
-            {!conditions.isStable && (
+            {false && !conditions.isStable && (
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-yellow-600" />
                 <p className="text-sm text-yellow-800">
@@ -785,7 +931,16 @@ export default function VideoStream({
               </div>
             )}
 
-            {conditions.isStable && (!conditions.hasFace || !conditions.isWellPositioned) && (
+            {!conditions.hasGoodLighting && (
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <p className="text-sm text-yellow-800">
+                  Move to a better lit area
+                </p>
+              </div>
+            )}
+
+            {conditions.hasGoodLighting && (!conditions.hasFace || !conditions.isWellPositioned) && (
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-yellow-600" />
                 <p className="text-sm text-yellow-800">
@@ -794,24 +949,12 @@ export default function VideoStream({
               </div>
             )}
 
-            {/* {conditions.isStable &&
-              conditions.hasFace &&
-              !conditions.hasGoodLighting && (
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-yellow-600" />
-                  <p className="text-sm text-yellow-800">
-                    Move to a better lit area
-                  </p>
-                </div>
-              )} */}
 
-            {conditions.isStable &&
-              conditions.hasFace &&
-              conditions.isWellPositioned && (
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-green-800">Measuring...</p>
-                </div>
-              )}
+            {conditions.hasGoodLighting && conditions.hasFace && conditions.isWellPositioned && (
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-green-800">Measuring...</p>
+              </div>
+            )}
           </>
         )}
       </div>

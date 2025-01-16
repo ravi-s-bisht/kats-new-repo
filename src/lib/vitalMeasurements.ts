@@ -7,7 +7,7 @@ interface VitalReading {
   }
   
   export class VitalMeasurements {
-    private readings: VitalReading[] = [];
+    public readings: VitalReading[] = [];
     private readonly measurementInterval = 1500; // Take measurements every 2 seconds
     private readonly minReadings = 3; // Minimum readings needed for valid average
     private lastMeasurementTime = 0;

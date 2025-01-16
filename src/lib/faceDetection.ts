@@ -87,7 +87,7 @@ export async function loadFaceDetectionModels() {
   return loadingPromise;
 }
 
-export async function detectFace(video: HTMLVideoElement) {
+export async function detectFace(video: HTMLVideoElement, detectedFaceOverlayRef: React.RefObject<HTMLCanvasElement>, drawFaceMapping?: any) {
   try {
     if (!modelsLoaded) {
       console.log('Face detection models not loaded, attempting to load...');
@@ -110,6 +110,9 @@ export async function detectFace(video: HTMLVideoElement) {
         score: detection.detection.score,
         landmarks: detection.landmarks.positions.length
       });
+
+      // Visualize the detection on the canvas
+      // drawFaceMapping(video, detection, detectedFaceOverlayRef);
       return detection;
     } else {
       console.log('No face detected in frame');

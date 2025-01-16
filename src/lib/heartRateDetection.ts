@@ -26,7 +26,8 @@ export class HeartRateDetector {
 
   private extractSignalFromFace(
     videoElement: HTMLVideoElement,
-    detection: faceapi.WithFaceLandmarks<{ detection: faceapi.FaceDetection }>
+    detection: faceapi.WithFaceLandmarks<{ detection: faceapi.FaceDetection }>,
+    detectedFaceOverlayRef: React.RefObject<HTMLCanvasElement>
   ): { signal: number; quality: number } {
     if (!videoElement || !detection || !detection.landmarks?.positions) {
       console.error("[HeartRate] Missing required parameters or landmarks");
@@ -34,18 +35,29 @@ export class HeartRateDetector {
     }
 
     try {
-      const canvas = document.createElement("canvas");
+      const canvas = detectedFaceOverlayRef.current;
+      if (!canvas) {
+        console.error("[HeartRate] Canvas is null");
+        return { signal: this.lastValidSignal || 0, quality: 0 };
+      }
       const context = canvas.getContext("2d");
+
       if (!context) {
         console.error("[HeartRate] Failed to get canvas context");
         return { signal: this.lastValidSignal || 0, quality: 0 };
       }
 
-      // Get face landmarks for precise ROI positioning
-      const landmarks = detection.landmarks.positions;
+      // Set canvas dimensions to match the video element
+      canvas.width = videoElement.videoWidth;
+      canvas.height = videoElement.videoHeight;
+
+      // Clear previous drawings
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Get face bounding box and landmarks
       const box = detection.detection.box;
 
-      // Define forehead ROI only for more stable measurements
+      // Define forehead ROI
       const rois = [
         {
           x: box.x + box.width * 0.2,
@@ -76,22 +88,22 @@ export class HeartRateDetector {
         canvas.width = validRoi.width;
         canvas.height = validRoi.height;
 
-        try {
-          context.drawImage(
-            videoElement,
-            validRoi.x,
-            validRoi.y,
-            validRoi.width,
-            validRoi.height,
-            0,
-            0,
-            validRoi.width,
-            validRoi.height
-          );
-        } catch (error) {
-          console.error("[HeartRate] Error drawing ROI to canvas:", error);
-          continue;
-        }
+        // try {
+        //   context.drawImage(
+        //     videoElement,
+        //     validRoi.x,
+        //     validRoi.y,
+        //     validRoi.width,
+        //     validRoi.height,
+        //     0,
+        //     0,
+        //     validRoi.width,
+        //     validRoi.height
+        //   );
+        // } catch (error) {
+        //   console.error("[HeartRate] Error drawing ROI to canvas:", error);
+        //   continue;
+        // }
 
         const imageData = context.getImageData(
           0,
@@ -313,7 +325,7 @@ export class HeartRateDetector {
   }
 
   private calculateHeartRate(peaks: number[]): number {
-    if (peaks.length < 2) {
+    if (peaks.length < 1) {
       console.log("[HeartRate] Insufficient peaks for calculation");
       return this.lastHeartRate ?? 0;
     }
@@ -453,12 +465,14 @@ export class HeartRateDetector {
     videoElement: HTMLVideoElement,
     faceDetection: faceapi.WithFaceLandmarks<{
       detection: faceapi.FaceDetection;
-    }>
+    }>,
+    detectedFaceOverlayRef: React.RefObject<HTMLCanvasElement>
   ): Promise<{ heartRate: number; hrv: number; history: number[] }> {
     try {
       const { signal, quality } = this.extractSignalFromFace(
         videoElement,
-        faceDetection
+        faceDetection,
+        detectedFaceOverlayRef
       );
 
       if (signal === 0) {
