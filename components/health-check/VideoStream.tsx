@@ -847,6 +847,7 @@ export default function VideoStream({
   const [heartRateReplit, setHeartRateReplit] = useState<VitalReading[]>([]);
   const [bloodPressure, setBloodPressure] = useState<BloodPressureReading[]>([]);
   const [bloodGlucose, setBloodGlucose] = useState<VitalReading[]>([]);
+  const [hrv, setHRV] = useState<VitalReading[]>([]);
   const [signalQuality, setSignalQuality] = useState<number>(0);
   
   const [timeLeft, setTimeLeft] = useState(0); // Time left in seconds
@@ -882,12 +883,19 @@ export default function VideoStream({
     setIsMonitoring(true);
   }
 
+  const handleCancelMonitoring = () => {
+    setIsMonitoring(false);
+    setTimeLeft(0); // Reset time to 0
+    setIsRunning(false);
+  }
+
   const handleStopMonitoring = () => {
     setIsMonitoring(false);
     console.warn('FINAL REPORT: ', {
       heart: Math.round(heartRateReplit[heartRateReplit.length - 1].value),
       bp: `${Math.round(bloodPressure[bloodPressure.length - 1].systolic)}/${Math.round(bloodPressure[bloodPressure.length - 1].diastolic)}`,
-      bg: Math.round(bloodGlucose[bloodGlucose.length - 1].value)
+      bg: Math.round(bloodGlucose[bloodGlucose.length - 1].value),
+      hrv: 0,
     });
     onComplete?.({
       averageBloodPressure: `${Math.round(bloodPressure[bloodPressure.length - 1].systolic)}/${Math.round(bloodPressure[bloodPressure.length - 1].diastolic)}`,
@@ -910,7 +918,7 @@ export default function VideoStream({
     }
 
     const unsubscribe = subscribeToVitals((vitals) => {
-      const { timestamp, heartRate: hr, bloodPressure: bp, bloodGlucose: bg, signalQuality: sq } = vitals;
+      const { timestamp, heartRate: hr, bloodPressure: bp, bloodGlucose: bg, hrv: hrvValue, signalQuality: sq } = vitals;
       setSignalQuality(sq);
 
       if (hr !== null) {
@@ -918,15 +926,22 @@ export default function VideoStream({
       }
 
       if (bp.systolic !== null && bp.diastolic !== null) {
-        setBloodPressure(prev => [...prev.slice(-30), { 
-          timestamp,
-          systolic: bp.systolic,
-          diastolic: bp.diastolic
-        }]);
+        setBloodPressure(prev => [
+          ...prev.slice(-30), 
+          { 
+            timestamp,
+            systolic: bp.systolic ?? 0,
+            diastolic: bp.diastolic ?? 0
+          }
+        ]);
       }
 
       if (bg !== null) {
         setBloodGlucose(prev => [...prev.slice(-30), { timestamp, value: bg }]);
+      }
+
+      if (hrvValue !== null) {
+        setHRV(prev => [...prev.slice(-30), { timestamp, value: hrvValue }]);
       }
     });
 
@@ -975,7 +990,7 @@ export default function VideoStream({
             <Button
               variant="destructive"
               size="icon"
-              onClick={handleStopMonitoring}
+              onClick={handleCancelMonitoring}
               className="absolute top-2 right-4 rounded-full bg-red-600"
             >
               <X className="h-4 w-4" color="white" />

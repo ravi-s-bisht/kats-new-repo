@@ -159,15 +159,13 @@ export default function VitalsDisplay({ data, isLoading = false, handleReset }: 
               sublabel={!data?.heartRate ? undefined :
                 data.heartRate >= 60 && data.heartRate <= 100 ? "Normal" : "Abnormal"}
             />
-{/* 
-            <VitalSign
+            {/* <VitalSign
               icon={LineChart}
               label="Heart Rate Variability"
               value={data?.hrv || "--"}
               unit="ms"
               color={data?.hrv === "--" ? "text-gray-400" : "text-blue-600"}
             /> */}
-
             <VitalSign
               icon={Droplet}
               label="Blood Glucose"

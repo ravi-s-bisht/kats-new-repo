@@ -10,6 +10,7 @@ const MOVING_AVERAGE_WINDOW = 5;
 const redBuffer: number[] = [];
 const greenBuffer: number[] = [];
 const blueBuffer: number[] = [];
+const rrIntervals: number[] = []; // Store R-R intervals for HRV calculation
 
 // Store previous values for smooth transitions
 let previousVitals = {
@@ -18,7 +19,8 @@ let previousVitals = {
     systolic: null as number | null,
     diastolic: null as number | null
   },
-  bloodGlucose: null as number | null
+  bloodGlucose: null as number | null,
+  hrv: null as number | null
 };
 
 interface VitalSigns {
@@ -28,6 +30,7 @@ interface VitalSigns {
     diastolic: number | null;
   };
   bloodGlucose: number | null;
+  hrv: number | null; // Heart Rate Variability in ms
   timestamp: number;
   signalQuality: number; // 0-1 range
 }
@@ -113,7 +116,7 @@ function calculateSignalQuality(signal: number[]): number {
   return Math.min(Math.max(variability * 2, 0), 1);
 }
 
-function findPeaks(signal: number[], minDistance: number = 10): number[] {
+function findPeaks(signal: number[], minDistance: number = 7): number[] {
   const peaks: number[] = [];
   // Calculate dynamic threshold based on signal statistics
   const mean = signal.reduce((a, b) => a + b, 0) / signal.length;
@@ -141,6 +144,41 @@ function findPeaks(signal: number[], minDistance: number = 10): number[] {
   }
 
   return peaks;
+}
+
+function calculateHRV(peaks: number[]): number | null {
+  if (peaks.length < 1) return null;
+
+  // Calculate R-R intervals in milliseconds
+  const intervals: number[] = [];
+  for (let i = 1; i < peaks.length; i++) {
+    const interval = (peaks[i] - peaks[i - 1]) * (PROCESS_INTERVAL); // Convert to ms
+    intervals.push(interval);
+  }
+
+  // Remove outliers using interquartile range
+  const sorted = [...intervals].sort((a, b) => a - b);
+  const q1 = sorted[Math.floor(sorted.length / 4)];
+  const q3 = sorted[Math.floor(3 * sorted.length / 4)];
+  const iqr = q3 - q1;
+  const validIntervals = intervals.filter(i => i >= q1 - 1.5 * iqr && i <= q3 + 1.5 * iqr);
+
+  if (validIntervals.length < 2) return null;
+
+  // Calculate RMSSD (Root Mean Square of Successive Differences)
+  let sumSquaredDiff = 0;
+  for (let i = 1; i < validIntervals.length; i++) {
+    const diff = validIntervals[i] - validIntervals[i - 1];
+    sumSquaredDiff += diff * diff;
+  }
+  const rmssd = Math.sqrt(sumSquaredDiff / (validIntervals.length - 1));
+
+  // Apply smooth transition to HRV value
+  return smoothTransition(
+    rmssd >= 10 && rmssd <= 100 ? rmssd : null,
+    previousVitals.hrv,
+    0.5 // Max change of 0.5ms per update
+  );
 }
 
 function calculateHeartRate(signal: number[]): number | null {
@@ -315,17 +353,23 @@ export function processVideoFrame(imageData: ImageData) {
     const bloodPressure = estimateBloodPressure(heartRate, signalStrength / 255);
     const bloodGlucose = estimateBloodGlucose(signalStrength / 255);
 
+    // Calculate HRV if we have valid peaks
+    const peaks = findPeaks(normalizeSignal(redBuffer));
+    const hrv = calculateHRV(peaks);
+
     // Store current values for next iteration's smooth transitions
     previousVitals = {
       heartRate,
       bloodPressure,
-      bloodGlucose
+      bloodGlucose,
+      hrv
     };
 
     notifySubscribers({
       heartRate,
       bloodPressure,
       bloodGlucose,
+      hrv,
       timestamp: currentTime,
       signalQuality
     });
@@ -335,6 +379,7 @@ export function processVideoFrame(imageData: ImageData) {
       heartRate: null,
       bloodPressure: { systolic: null, diastolic: null },
       bloodGlucose: null,
+      hrv: null,
       timestamp: currentTime,
       signalQuality
     });

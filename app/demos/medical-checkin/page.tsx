@@ -121,7 +121,8 @@ export default function Home() {
     setCurrentStep(3);
     setTimeout(() => {
       setIsAnalyzing(false);
-      if (!isLoggedIn) {
+      if (!user) {
+        console.warn("User is not logged in, prompting for auth", user);
         setShowAuthPrompt(true);
       }
     }, 1000);
@@ -138,11 +139,11 @@ export default function Home() {
 
   useEffect(() => {
     const storedData = localStorage.getItem("analysisData");
-    if (user && storedData) {
+    if (user) {
       try {
-        const parsedData: VitalsData = JSON.parse(storedData);
-        setAnalysisData(parsedData);
-        localStorage.removeItem("analysisData"); // Clean up after loading
+        // const parsedData: VitalsData = JSON.parse(storedData);
+        // setAnalysisData(parsedData);
+        // localStorage.removeItem("analysisData"); // Clean up after loading
         handleAuthSuccess();
       } catch (error) {
         console.error("Error parsing stored analysis data:", error);
@@ -201,7 +202,7 @@ export default function Home() {
             </p>
           </div>
 
-          {isLoggedIn ? (
+          {user ? (
             <VitalsDisplay data={analysisData} handleReset={handleReset} />
           ) : (
             <div className="text-center p-6 bg-gray-50 rounded-lg">

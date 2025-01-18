@@ -43,11 +43,14 @@ export function VitalsDisplay({ isMonitoring }: VitalsDisplayProps) {
       }
 
       if (bp.systolic !== null && bp.diastolic !== null) {
-        setBloodPressure(prev => [...prev.slice(-30), { 
-          timestamp,
-          systolic: bp.systolic,
-          diastolic: bp.diastolic
-        }]);
+        setBloodPressure(prev => [
+          ...prev.slice(-30), 
+          { 
+            timestamp,
+            systolic: bp.systolic ?? 0,
+            diastolic: bp.diastolic ?? 0
+          }
+        ]);
       }
 
       if (bg !== null) {

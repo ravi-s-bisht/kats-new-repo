@@ -16,7 +16,11 @@ export function WebcamFeed({ isActive }: WebcamFeedProps) {
     async function startWebcam() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" },
+          video: {
+            facingMode: "user",
+            width: { ideal: 720 },
+            height: { ideal: 1280 },
+          },
           audio: false,
         });
 
@@ -33,8 +37,19 @@ export function WebcamFeed({ isActive }: WebcamFeedProps) {
       if (videoRef.current && canvasRef.current && isActive) {
         const context = canvasRef.current.getContext("2d");
         if (context) {
-          context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
-          const imageData = context.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
+          context.drawImage(
+            videoRef.current,
+            0,
+            0,
+            canvasRef.current.width,
+            canvasRef.current.height
+          );
+          const imageData = context.getImageData(
+            0,
+            0,
+            canvasRef.current.width,
+            canvasRef.current.height
+          );
           processVideoFrame(imageData);
         }
         animationFrame = requestAnimationFrame(processFrame);
@@ -48,7 +63,7 @@ export function WebcamFeed({ isActive }: WebcamFeedProps) {
 
     return () => {
       if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       }
       if (animationFrame) {
         cancelAnimationFrame(animationFrame);
