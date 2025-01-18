@@ -4,7 +4,7 @@ export const runtime = "edge";
 
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Video, Camera, Check, Loader2, Info, Square, Play } from "lucide-react";
+import { Video, Camera, Check, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StepProgress from "@/components/health-check/StepProgress";
 import VitalsDisplay, {
@@ -17,7 +17,6 @@ import { useAnalysis } from "@/src/lib/context";
 import AuthPrompt from "@/components/health-check/AuthPrompt";
 import { useUser } from "@/src/contexts/UserContext";
 import VideoStream from "@/components/health-check/VideoStream";
-import { WebcamFeed } from "@/components/webcam-feed";
 
 const steps = [
   {
@@ -154,11 +153,8 @@ export default function Home() {
     }
   }, []);
 
-  const [isMonitoring, setIsMonitoring] = useState(false);
-
   return (
     <div className="flex flex-col items-center justify-start w-auto h-screen">
-        
       {currentStep != 3 && (
         <VideoStream
           onStreamStart={handleStreamStart}
@@ -167,7 +163,6 @@ export default function Home() {
           onCancel={handleVideoCancel}
           handleReset={handleReset}
         />
-        
       )}
 
       {showAuthPrompt && <AuthPrompt onAuthSuccess={handleAuthSuccess} />}

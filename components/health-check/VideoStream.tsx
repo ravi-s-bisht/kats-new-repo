@@ -2,9 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, AlertCircle, Loader2, X, Info } from "lucide-react";
+import {
+  Camera,
+  AlertCircle,
+  Loader2,
+  X,
+  Info,
+  Square,
+  Play,
+} from "lucide-react";
 import {
   detectFace,
   isFaceWellPositioned,
@@ -16,7 +24,10 @@ import { VitalMeasurements } from "@/src/lib/vitalMeasurements";
 import { motion } from "framer-motion";
 import { AverageFinalReport } from "./VideoCheckIn";
 import { CustomProgress } from "../ui/CustomProgress";
-import * as faceapi from '@vladmandic/face-api';
+import * as faceapi from "@vladmandic/face-api";
+import { WebcamFeed } from "../webcam-feed";
+import { BloodPressureReading, VitalReading, VitalsDisplay } from "../vitals-display";
+import { subscribeToVitals } from "@/src/lib/vitals-processor";
 
 interface VideoStreamProps {
   onStreamStart: (stream: MediaStream | null) => void;
@@ -176,23 +187,23 @@ export default function VideoStream({
   ): void {
     const canvas = detectedFaceOverlayRef.current;
     if (!canvas || !video || !detection) return;
-  
+
     const context = canvas.getContext("2d");
     if (!context) return;
-  
+
     // Set canvas dimensions to match the video
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-  
+
     // Clear previous drawings
     context.clearRect(0, 0, canvas.width, canvas.height);
-  
+
     // Draw the detected face box
     const box = detection.detection.box;
     context.strokeStyle = "red";
     context.lineWidth = 2;
     context.strokeRect(box.x, box.y, box.width, box.height);
-  
+
     // Draw landmarks
     context.fillStyle = "blue";
     detection.landmarks.positions.forEach((point) => {
@@ -200,14 +211,14 @@ export default function VideoStream({
       context.arc(point.x, point.y, 2, 0, 2 * Math.PI);
       context.fill();
     });
-  
+
     // Calculate guidance box using the same logic as `isWellPositioned`
     const devicePixelRatio = window.devicePixelRatio || 1;
     const videoWidth = video.videoWidth * devicePixelRatio;
     const videoHeight = video.videoHeight * devicePixelRatio;
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
     const padding = videoWidth * 0.05;
-  
+
     const guidanceBox = isMobile
       ? {
           left: videoWidth * 0.15 - padding,
@@ -221,7 +232,7 @@ export default function VideoStream({
           top: videoHeight * 0.15,
           bottom: videoHeight * 0.88,
         };
-  
+
     // Draw the guidance box
     context.strokeStyle = "green";
     context.lineWidth = 2;
@@ -232,8 +243,6 @@ export default function VideoStream({
       (guidanceBox.bottom - guidanceBox.top) / devicePixelRatio
     );
   }
-  
-   
 
   const processFrame = async () => {
     if (
@@ -285,7 +294,11 @@ export default function VideoStream({
     const hasGoodLighting = checkLightingQuality(currentFrameData);
 
     try {
-      const faceDetection = await detectFace(videoRef.current, detectedFaceOverlayRef, drawFaceMapping);
+      const faceDetection = await detectFace(
+        videoRef.current,
+        detectedFaceOverlayRef,
+        drawFaceMapping
+      );
       const hasFace = !!faceDetection;
 
       let isWellPositioned = false;
@@ -457,7 +470,7 @@ export default function VideoStream({
                 }
                 const bp = await bloodPressureEstimatorRef.current.update(
                   videoRef.current,
-                  faceDetection,
+                  faceDetection
                 );
                 console.log("Blood pressure reading:", bp);
                 lastBPUpdateRef.current = now;
@@ -560,7 +573,7 @@ export default function VideoStream({
     stopVideo();
     onCancel?.();
     handleReset();
-  
+
     // Clear overlay canvas
     if (overlayCanvasRef.current) {
       const overlayContext = overlayCanvasRef.current.getContext("2d");
@@ -573,7 +586,7 @@ export default function VideoStream({
         );
       }
     }
-  };  
+  };
 
   const startVideo = async () => {
     console.log("Starting video stream...");
@@ -782,9 +795,13 @@ export default function VideoStream({
   const startTimeRef = useRef<number | null>(null);
   const lastElapsedTimeRef = useRef<number>(0);
 
+  const [isMonitoring, setIsMonitoring] = useState(false);
+  
+
   useEffect(() => {
     if (progress >= 100) {
       stopVideo();
+      setIsMonitoring(false);
       const finalReport = vitalMeasurementsRef.current.getFinalReport();
       console.log("Final vital signs report:", finalReport);
       onComplete?.(finalReport);
@@ -798,61 +815,130 @@ export default function VideoStream({
     };
   }, []);
 
+  // useEffect(() => {
+  //   console.log("Initializing face detection...");
+  //   loadFaceDetectionModels()
+  //     .then(() => {
+  //       console.log("Face detection models loaded successfully");
+  //       setIsModelLoading(false);
+  //     })
+  //     .catch((error) => {
+  //       console.error("Error loading face detection models:", error);
+  //       setError(
+  //         "Failed to load face detection models. Please check console for details."
+  //       );
+  //       setIsModelLoading(false);
+  //     });
+
+  //   return () => {
+  //     console.log("Cleaning up video resources...");
+  //     stopVideo();
+  //   };
+  // }, []);
+
+  // if (isModelLoading) {
+  //   return (
+  //     <div className="flex items-center justify-center h-screen p-8">
+  //       <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+  //       <span>Loading...</span>
+  //     </div>
+  //   );
+  // }
+  const [heartRateReplit, setHeartRateReplit] = useState<VitalReading[]>([]);
+  const [bloodPressure, setBloodPressure] = useState<BloodPressureReading[]>([]);
+  const [bloodGlucose, setBloodGlucose] = useState<VitalReading[]>([]);
+  const [signalQuality, setSignalQuality] = useState<number>(0);
+  
+  const [timeLeft, setTimeLeft] = useState(0); // Time left in seconds
+  const [isRunning, setIsRunning] = useState(false); // To track if the timer is running
+  const totalTime = 30; // Total duration of the timer
+  const [progressPercentage, setProgressPercentage] = useState(0);
+
   useEffect(() => {
-    console.log("Initializing face detection...");
-    loadFaceDetectionModels()
-      .then(() => {
-        console.log("Face detection models loaded successfully");
-        setIsModelLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error loading face detection models:", error);
-        setError(
-          "Failed to load face detection models. Please check console for details."
-        );
-        setIsModelLoading(false);
+    if (!isRunning || timeLeft === 0) return;
+
+    const timerId = setInterval(() => {
+      setTimeLeft((prevTime) => {
+        if (prevTime > 1) {
+          let prog = ((totalTime - prevTime) / totalTime) * 100;
+          console.log('progressing.....', prog)
+          setProgressPercentage(((totalTime - timeLeft) / totalTime) * 100);
+          return prevTime - 1;
+        } else {
+          handleStopMonitoring();
+          clearInterval(timerId); // Clear the timer when it ends
+          setIsRunning(false);
+          return 0;
+        }
       });
+    }, 1000);
 
-    return () => {
-      console.log("Cleaning up video resources...");
-      stopVideo();
-    };
-  }, []);
+    return () => clearInterval(timerId); // Cleanup interval
+  }, [isRunning, timeLeft]);
 
-  if (isModelLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-        <span>Loading...</span>
-      </div>
-    );
+  const handleStartMonitoring = () => {
+    setTimeLeft(totalTime);
+    setIsRunning(true); // Start the timer
+    setIsMonitoring(true);
   }
+
+  const handleStopMonitoring = () => {
+    setIsMonitoring(false);
+    console.warn('FINAL REPORT: ', {
+      heart: Math.round(heartRateReplit[heartRateReplit.length - 1].value),
+      bp: `${Math.round(bloodPressure[bloodPressure.length - 1].systolic)}/${Math.round(bloodPressure[bloodPressure.length - 1].diastolic)}`,
+      bg: Math.round(bloodGlucose[bloodGlucose.length - 1].value)
+    });
+    onComplete?.({
+      averageBloodPressure: `${Math.round(bloodPressure[bloodPressure.length - 1].systolic)}/${Math.round(bloodPressure[bloodPressure.length - 1].diastolic)}`,
+      averageBloodGlucose: Math.round(bloodGlucose[bloodGlucose.length - 1].value),
+      averageHeartRate: Math.round(heartRateReplit[heartRateReplit.length - 1].value),
+      averageHRV: 0,
+      confidence: 50,
+      totalReadings: 10
+    });
+  }
+
+  useEffect(() => {
+    if (!isMonitoring) {
+      // Clear readings when monitoring stops
+      setHeartRateReplit([]);
+      setBloodPressure([]);
+      setBloodGlucose([]);
+      setSignalQuality(0);
+      return;
+    }
+
+    const unsubscribe = subscribeToVitals((vitals) => {
+      const { timestamp, heartRate: hr, bloodPressure: bp, bloodGlucose: bg, signalQuality: sq } = vitals;
+      setSignalQuality(sq);
+
+      if (hr !== null) {
+        setHeartRateReplit(prev => [...prev.slice(-30), { timestamp, value: hr }]);
+      }
+
+      if (bp.systolic !== null && bp.diastolic !== null) {
+        setBloodPressure(prev => [...prev.slice(-30), { 
+          timestamp,
+          systolic: bp.systolic,
+          diastolic: bp.diastolic
+        }]);
+      }
+
+      if (bg !== null) {
+        setBloodGlucose(prev => [...prev.slice(-30), { timestamp, value: bg }]);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [isMonitoring]);
 
   return (
     <div className="flex flex-col items-center space-y-4 bg-gray-100 h-[calc(100vh-65px)] p-4">
-      {/* Video Container */}
       <Card className="overflow-hidden bg-gray-900 w-full max-w-[400px] h-[calc(100vh-60px)] sm:h-screen relative rounded-lg">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          className="w-full h-full object-cover"
-        />
+        <WebcamFeed isActive={isMonitoring} />
 
-        <canvas
-          ref={overlayCanvasRef}
-          className="absolute inset-0 w-full h-full pointer-events-none"
-        />
-
-        <canvas
-          ref={detectedFaceOverlayRef}
-          className="absolute inset-0 w-full h-full pointer-events-none"
-        />
-
-        <canvas
-          ref={debugCanvasRef}
-          className="absolute inset-0 w-full h-full pointer-events-none"
-        />
+        
 
         {/* Overlay Icons */}
         {/* <div className="absolute top-4 left-4 flex items-center gap-2">
@@ -865,19 +951,19 @@ export default function VideoStream({
           </div>
         )}
 
-        {videoRef.current?.srcObject && (
+        {isMonitoring && (
           <>
             <div className="absolute bottom-0 left-0 w-full px-4 py-2 bg-gray-800">
               <div className="flex items-center gap-2">
                 <CustomProgress
-                  value={progress}
+                  value={progressPercentage}
                   className="w-full bg-white"
                   color="#44c569"
                 >
                   <div
                     className="absolute text-sm font-medium text-white"
                     style={{
-                      left: `${progress}%`,
+                      left: `${progressPercentage}%`,
                       transform: "translateX(-50%)",
                     }}
                   >
@@ -889,7 +975,7 @@ export default function VideoStream({
             <Button
               variant="destructive"
               size="icon"
-              onClick={handleCancel}
+              onClick={handleStopMonitoring}
               className="absolute top-2 right-4 rounded-full bg-red-600"
             >
               <X className="h-4 w-4" color="white" />
@@ -900,19 +986,27 @@ export default function VideoStream({
 
       {/* Start Button */}
       <Button
-        disabled={videoStarted}
-        onClick={startVideo}
+        disabled={isMonitoring}
+        onClick={handleStartMonitoring}
         className="bg-teal-500 text-white py-2 px-8 rounded-lg shadow-md hover:bg-teal-600 focus:ring focus:ring-teal-300"
       >
         START
       </Button>
+
+      {/* <Card>
+            <CardContent className="p-6">
+              <VitalsDisplay isMonitoring={isMonitoring} />
+            </CardContent>
+          </Card> */}
 
       {/* Measurements Section */}
       <div className="flex justify-around w-full bg-white p-4 rounded-lg shadow-md">
         <div className="flex flex-col items-center">
           <span className="text-sm text-gray-600">PULSE</span>
           <span className="text-2xl font-bold text-black">
-            {realTimeHeartRate ? realTimeHeartRate : "--"}
+          {heartRateReplit.length && signalQuality >= 0.3 
+                ? Math.round(heartRateReplit[heartRateReplit.length - 1].value)
+                : "--"}
           </span>
           <span className="text-xs text-gray-500">bpm</span>
         </div>
@@ -940,21 +1034,21 @@ export default function VideoStream({
               </div>
             )}
 
-            {conditions.hasGoodLighting && (!conditions.hasFace || !conditions.isWellPositioned) && (
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-yellow-600" />
-                <p className="text-sm text-yellow-800">
-                  Position your face within the frame guides
-                </p>
-              </div>
-            )}
+            {conditions.hasGoodLighting &&
+              (!conditions.hasFace || !conditions.isWellPositioned) && (
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-yellow-600" />
+                  <p className="text-sm text-yellow-800">
+                    Position your face within the frame guides
+                  </p>
+                </div>
+              )}
 
-
-            {conditions.hasGoodLighting && conditions.hasFace && conditions.isWellPositioned && (
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-green-800">Measuring...</p>
-              </div>
-            )}
+            {isMonitoring && (
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-green-800">Measuring...</p>
+                </div>
+              )}
           </>
         )}
       </div>
