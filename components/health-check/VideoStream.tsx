@@ -26,7 +26,11 @@ import { AverageFinalReport } from "./VideoCheckIn";
 import { CustomProgress } from "../ui/CustomProgress";
 import * as faceapi from "@vladmandic/face-api";
 import { WebcamFeed } from "../webcam-feed";
-import { BloodPressureReading, VitalReading, VitalsDisplay } from "../vitals-display";
+import {
+  BloodPressureReading,
+  VitalReading,
+  VitalsDisplay,
+} from "../vitals-display";
 import { subscribeToVitals } from "@/src/lib/vitals-processor";
 
 interface VideoStreamProps {
@@ -796,7 +800,6 @@ export default function VideoStream({
   const lastElapsedTimeRef = useRef<number>(0);
 
   const [isMonitoring, setIsMonitoring] = useState(false);
-  
 
   useEffect(() => {
     if (progress >= 100) {
@@ -845,11 +848,13 @@ export default function VideoStream({
   //   );
   // }
   const [heartRateReplit, setHeartRateReplit] = useState<VitalReading[]>([]);
-  const [bloodPressure, setBloodPressure] = useState<BloodPressureReading[]>([]);
+  const [bloodPressure, setBloodPressure] = useState<BloodPressureReading[]>(
+    []
+  );
   const [bloodGlucose, setBloodGlucose] = useState<VitalReading[]>([]);
   const [hrv, setHRV] = useState<VitalReading[]>([]);
   const [signalQuality, setSignalQuality] = useState<number>(0);
-  
+
   const [timeLeft, setTimeLeft] = useState(0); // Time left in seconds
   const [isRunning, setIsRunning] = useState(false); // To track if the timer is running
   const totalTime = 30; // Total duration of the timer
@@ -862,7 +867,7 @@ export default function VideoStream({
       setTimeLeft((prevTime) => {
         if (prevTime > 1) {
           let prog = ((totalTime - prevTime) / totalTime) * 100;
-          console.log('progressing.....', prog)
+          console.log("progressing.....", prog);
           setProgressPercentage(((totalTime - timeLeft) / totalTime) * 100);
           return prevTime - 1;
         } else {
@@ -881,31 +886,54 @@ export default function VideoStream({
     setTimeLeft(totalTime);
     setIsRunning(true); // Start the timer
     setIsMonitoring(true);
-  }
+  };
 
   const handleCancelMonitoring = () => {
     setIsMonitoring(false);
     setTimeLeft(0); // Reset time to 0
     setIsRunning(false);
-  }
+  };
 
   const handleStopMonitoring = () => {
     setIsMonitoring(false);
-    console.warn('FINAL REPORT: ', {
-      heart: Math.round(heartRateReplit[heartRateReplit.length - 1].value),
-      bp: `${Math.round(bloodPressure[bloodPressure.length - 1].systolic)}/${Math.round(bloodPressure[bloodPressure.length - 1].diastolic)}`,
-      bg: Math.round(bloodGlucose[bloodGlucose.length - 1].value),
-      hrv: 0,
+    console.warn("FINAL REPORT: ", {
+      heart:
+        heartRateReplit.length > 0
+          ? Math.round(heartRateReplit[heartRateReplit.length - 1].value)
+          : null,
+      bp:
+        bloodPressure.length > 0
+          ? `${Math.round(
+              bloodPressure[bloodPressure.length - 1].systolic
+            )}/${Math.round(bloodPressure[bloodPressure.length - 1].diastolic)}`
+          : null,
+      bg:
+        bloodGlucose.length > 0
+          ? Math.round(bloodGlucose[bloodGlucose.length - 1].value)
+          : null,
+      hrv: hrv.length > 0 ? Math.round(hrv[hrv.length - 1].value) : null,
     });
+    console.warn("HRV: ", hrv);
     onComplete?.({
-      averageBloodPressure: `${Math.round(bloodPressure[bloodPressure.length - 1].systolic)}/${Math.round(bloodPressure[bloodPressure.length - 1].diastolic)}`,
-      averageBloodGlucose: Math.round(bloodGlucose[bloodGlucose.length - 1].value),
-      averageHeartRate: Math.round(heartRateReplit[heartRateReplit.length - 1].value),
-      averageHRV: 0,
+      averageBloodPressure:
+        bloodPressure.length > 0
+          ? `${Math.round(
+              bloodPressure[bloodPressure.length - 1].systolic
+            )}/${Math.round(bloodPressure[bloodPressure.length - 1].diastolic)}`
+          : null,
+      averageBloodGlucose:
+        bloodGlucose.length > 0
+          ? Math.round(bloodGlucose[bloodGlucose.length - 1].value)
+          : null,
+      averageHeartRate:
+        heartRateReplit.length > 0
+          ? Math.round(heartRateReplit[heartRateReplit.length - 1].value)
+          : null,
+      averageHRV: hrv.length > 0 ? Math.round(hrv[hrv.length - 1].value) : null,
       confidence: 50,
-      totalReadings: 10
+      totalReadings: 10,
     });
-  }
+  };
 
   useEffect(() => {
     if (!isMonitoring) {
@@ -918,30 +946,43 @@ export default function VideoStream({
     }
 
     const unsubscribe = subscribeToVitals((vitals) => {
-      const { timestamp, heartRate: hr, bloodPressure: bp, bloodGlucose: bg, hrv: hrvValue, signalQuality: sq } = vitals;
+      const {
+        timestamp,
+        heartRate: hr,
+        bloodPressure: bp,
+        bloodGlucose: bg,
+        hrv: hrvValue,
+        signalQuality: sq,
+      } = vitals;
       setSignalQuality(sq);
 
       if (hr !== null) {
-        setHeartRateReplit(prev => [...prev.slice(-30), { timestamp, value: hr }]);
+        setHeartRateReplit((prev) => [
+          ...prev.slice(-30),
+          { timestamp, value: hr },
+        ]);
       }
 
       if (bp.systolic !== null && bp.diastolic !== null) {
-        setBloodPressure(prev => [
-          ...prev.slice(-30), 
-          { 
+        setBloodPressure((prev) => [
+          ...prev.slice(-30),
+          {
             timestamp,
             systolic: bp.systolic ?? 0,
-            diastolic: bp.diastolic ?? 0
-          }
+            diastolic: bp.diastolic ?? 0,
+          },
         ]);
       }
 
       if (bg !== null) {
-        setBloodGlucose(prev => [...prev.slice(-30), { timestamp, value: bg }]);
+        setBloodGlucose((prev) => [
+          ...prev.slice(-30),
+          { timestamp, value: bg },
+        ]);
       }
 
       if (hrvValue !== null) {
-        setHRV(prev => [...prev.slice(-30), { timestamp, value: hrvValue }]);
+        setHRV((prev) => [...prev.slice(-30), { timestamp, value: hrvValue }]);
       }
     });
 
@@ -952,8 +993,6 @@ export default function VideoStream({
     <div className="flex flex-col items-center space-y-4 bg-gray-100 h-[calc(100vh-65px)] p-4">
       <Card className="overflow-hidden bg-gray-900 w-full max-w-[400px] h-[calc(100vh-60px)] sm:h-screen relative rounded-lg">
         <WebcamFeed isActive={isMonitoring} />
-
-        
 
         {/* Overlay Icons */}
         {/* <div className="absolute top-4 left-4 flex items-center gap-2">
@@ -1019,9 +1058,9 @@ export default function VideoStream({
         <div className="flex flex-col items-center">
           <span className="text-sm text-gray-600">PULSE</span>
           <span className="text-2xl font-bold text-black">
-          {heartRateReplit.length && signalQuality >= 0.3 
-                ? Math.round(heartRateReplit[heartRateReplit.length - 1].value)
-                : "--"}
+            {heartRateReplit.length && signalQuality >= 0.3
+              ? Math.round(heartRateReplit[heartRateReplit.length - 1].value)
+              : "--"}
           </span>
           <span className="text-xs text-gray-500">bpm</span>
         </div>
@@ -1060,10 +1099,10 @@ export default function VideoStream({
               )}
 
             {isMonitoring && (
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-green-800">Measuring...</p>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-green-800">Measuring...</p>
+              </div>
+            )}
           </>
         )}
       </div>

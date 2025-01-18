@@ -20,10 +20,10 @@ interface VideoCheckInProps {
 }
 
 export interface AverageFinalReport {
-  averageHeartRate: number;
-  averageBloodPressure: string;
-  averageHRV: number;
-  averageBloodGlucose: number;
+  averageHeartRate: number | null;
+  averageBloodPressure: string | null;
+  averageHRV: number | null;
+  averageBloodGlucose: number | null;
   confidence: number;
   totalReadings: number;
 }

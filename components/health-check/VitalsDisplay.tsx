@@ -7,10 +7,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../ui/button";
 
 export interface VitalsData {
-  bp: string;
-  heartRate: number;
-  hrv: string | number;
-  bloodGlucose: string | number;
+  bp: string | null;
+  heartRate: number | null;
+  hrv: string | number | null;
+  bloodGlucose: string | number | null;
   depressionProbability: string | number;
 }
 
@@ -159,13 +159,6 @@ export default function VitalsDisplay({ data, isLoading = false, handleReset }: 
               sublabel={!data?.heartRate ? undefined :
                 data.heartRate >= 60 && data.heartRate <= 100 ? "Normal" : "Abnormal"}
             />
-            {/* <VitalSign
-              icon={LineChart}
-              label="Heart Rate Variability"
-              value={data?.hrv || "--"}
-              unit="ms"
-              color={data?.hrv === "--" ? "text-gray-400" : "text-blue-600"}
-            /> */}
             <VitalSign
               icon={Droplet}
               label="Blood Glucose"
@@ -177,6 +170,13 @@ export default function VitalsDisplay({ data, isLoading = false, handleReset }: 
                 Number(data.bloodGlucose) <= 140 ? "Normal" :
                 Number(data.bloodGlucose) <= 200 ? "High" : "Very High"
               }
+            />
+            <VitalSign
+              icon={LineChart}
+              label="Heart Rate Variability"
+              value={data?.hrv || "--"}
+              unit="ms"
+              color={data?.hrv === "--" ? "text-gray-400" : "text-blue-600"}
             />
           </CardContent>
         </Card>

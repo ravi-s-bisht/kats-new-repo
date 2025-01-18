@@ -147,6 +147,7 @@ function findPeaks(signal: number[], minDistance: number = 7): number[] {
 }
 
 function calculateHRV(peaks: number[]): number | null {
+  console.info("In [calculateHRV] function", peaks);
   if (peaks.length < 1) return null;
 
   // Calculate R-R intervals in milliseconds
@@ -346,7 +347,7 @@ export function processVideoFrame(imageData: ImageData) {
   const signalQuality = calculateSignalQuality(redBuffer);
 
   // Only process vitals if signal quality is acceptable
-  if (signalQuality > 0.3) {
+  if (signalQuality > 0.2) {
     // Calculate vital signs using the red channel (most sensitive to blood volume changes)
     const heartRate = calculateHeartRate(redBuffer);
     const signalStrength = Math.max(...redBuffer) - Math.min(...redBuffer);

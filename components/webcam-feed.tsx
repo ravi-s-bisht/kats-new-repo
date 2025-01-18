@@ -61,12 +61,22 @@ export function WebcamFeed({ isActive }: WebcamFeedProps) {
       processFrame();
     }
 
+    const currentCanvas = canvasRef.current;
     return () => {
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
       }
       if (animationFrame) {
         cancelAnimationFrame(animationFrame);
+      }
+
+      // Clear the canvas to black when the video stops
+      if (currentCanvas) {
+        const context = currentCanvas.getContext("2d");
+        if (context) {
+          context.fillStyle = "black";
+          context.fillRect(0, 0, currentCanvas.width, currentCanvas.height);
+        }
       }
     };
   }, [isActive]);
@@ -81,8 +91,8 @@ export function WebcamFeed({ isActive }: WebcamFeedProps) {
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full"
-        width="640"
-        height="480"
+        width="1280"
+        height="720"
       />
       {!isActive && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
