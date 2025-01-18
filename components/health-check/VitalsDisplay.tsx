@@ -171,13 +171,13 @@ export default function VitalsDisplay({ data, isLoading = false, handleReset }: 
                 Number(data.bloodGlucose) <= 200 ? "High" : "Very High"
               }
             />
-            <VitalSign
+            {/* <VitalSign
               icon={LineChart}
               label="Heart Rate Variability"
               value={data?.hrv || "--"}
               unit="ms"
               color={data?.hrv === "--" ? "text-gray-400" : "text-blue-600"}
-            />
+            /> */}
           </CardContent>
         </Card>
 
