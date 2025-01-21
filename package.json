@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "shenai-sdk": "file:shenai-sdk",
     "@azure/app-configuration": "^1.8.0",
     "@azure/storage-blob": "^12.26.0",
     "@daily-co/daily-react": "^0.22.0",
@@ -53,6 +52,7 @@
     "deepmerge-ts": "^7.1.0",
     "face-api.js": "^0.22.2",
     "framer-motion": "^11.12.0",
+    "hume": "^0.9.10",
     "jsonwebtoken": "^9.0.2",
     "knex": "^3.1.0",
     "lucide-react": "^0.378.0",
@@ -77,6 +77,7 @@
     "realtime-ai": "0.2.0",
     "realtime-ai-react": "0.2.0",
     "recharts": "^2.15.0",
+    "shenai-sdk": "file:shenai-sdk",
     "sqlite3": "^5.1.7",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",

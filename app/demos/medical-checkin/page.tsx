@@ -2,7 +2,7 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { useShenaiSdk } from "@/hooks/useShenaiSdk";
-import { InitializationSettings } from "@/shenai-sdk";
+import { InitializationSettings } from "shenai-sdk";
 import Head from "next/head";
 import React, { useEffect, useRef, useState } from "react";
 import styles from "@/styles/Home.module.css";
@@ -18,8 +18,6 @@ function Page() {
   const apiKey = "62ad70ae10a84a028e615b781dd81a73";
   const shenaiSDK = useShenaiSdk();
   const [pendingInitialization, setPendingInitialization] = useState(false);
-  const [initializationSettings, setInitializationSettings] =
-    useState<InitializationSettings>();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(2);
   const { user } = useUser();
@@ -43,7 +41,7 @@ function Page() {
     onSuccess?: () => void
   ) => {
     if (!shenaiSDK) return;
-    setPendingInitialization(true);
+    
     shenaiSDK.initialize(apiKey, "", settings, (res) => {
       if (res === shenaiSDK.InitializationResult.OK) {
         console.log("Shen.AI License result: ", res);
@@ -83,10 +81,7 @@ function Page() {
       showTrialMetricLabels: false,
       enableFullFrameProcessing: false,
     };
-    setInitializationSettings(settings);
 
-    const urlParams = new URLSearchParams(window?.location.search ?? "");
-    console.log("API KEY: ", apiKey);
     if (apiKey && apiKey.length > 0) {
       console.log("INITIALIZINGGGG!");
       initializeSdk(apiKey, settings, () =>

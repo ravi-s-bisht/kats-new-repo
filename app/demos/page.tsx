@@ -97,7 +97,7 @@ export default function VoiceAvatarsPage() {
               </div>
               <div className="flex w-full">
                 <Link
-                  href={`/avatars/${avatar.type}/${avatar.id}`}
+                  href={`demos/${avatar.type}/${avatar.id}`}
                   className="w-full"
                 >
                   <Button className="w-full">
