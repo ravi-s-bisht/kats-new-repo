@@ -27,7 +27,14 @@ function Page() {
   const [showVideoCheck, setShowVideoCheck] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
+
+  function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+  }
 
   const canvasTopRef = useRef<HTMLDivElement>(null);
   const scrollToCanvas = () => {
@@ -43,7 +50,7 @@ function Page() {
     onSuccess?: () => void
   ) => {
     if (!shenaiSDK) return;
-    
+
     shenaiSDK.initialize(apiKey, "", settings, (res) => {
       if (res === shenaiSDK.InitializationResult.OK) {
         console.log("Shen.AI License result: ", res);
@@ -63,11 +70,21 @@ function Page() {
   useEffect(() => {
     if (!shenaiSDK || currentStep == 3) return;
 
+    // Check if it is a mobile browser
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+
+    const cameraModeCustom = isMobile
+      ? shenaiSDK.CameraMode.FACING_USER
+      : shenaiSDK.CameraMode.DEVICE_ID;
+
     const settings: InitializationSettings = {
       precisionMode: shenaiSDK.PrecisionMode.STRICT,
       operatingMode: shenaiSDK.OperatingMode.POSITIONING,
       measurementPreset: shenaiSDK.MeasurementPreset.ONE_MINUTE_BETA_METRICS,
-      cameraMode: shenaiSDK.CameraMode.DEVICE_ID,
+      cameraMode: cameraModeCustom,
       onboardingMode: shenaiSDK.OnboardingMode.HIDDEN,
       showUserInterface: true,
       showFacePositioningOverlay: true,
@@ -190,6 +207,7 @@ function Page() {
   };
 
   useEffect(() => {
+    setIsMobile(isMobileDevice());
     const storedData = localStorage.getItem("analysisData");
     if (user) {
       try {
@@ -212,9 +230,14 @@ function Page() {
       {showAuthPrompt && <AuthPrompt onAuthSuccess={handleAuthSuccess} />}
 
       {currentStep != 3 && (
-        <div className="justify-center items-center">
+        <div
+          className={`${!isMobile ? "flex" : ""} justify-center items-center`}
+        >
           <div ref={canvasTopRef} className={styles.mxcanvasTopHelper} />
-          <canvas id="mxcanvas" className={styles.mxcanvas} />
+          <canvas
+            id="mxcanvas"
+            className={`${styles.mxcanvas} ${isMobile ? "w-full" : ""}`}
+          />
         </div>
       )}
 
