@@ -81,9 +81,7 @@ export default function VitalsDisplay({ data, isLoading = false, handleReset }: 
   const getBPStatusColor = (bp: string) => {
     if (!bp || bp === "--") return "text-gray-400";
     const [systolic, diastolic] = bp.split('/').map(Number);
-    if (systolic < 120 && diastolic < 80) return "text-green-600";
-    if (systolic < 130 && diastolic < 80) return "text-yellow-600";
-    return "text-gray-200";
+    return "text-black";
   };
 
   // Helper function to determine heart rate status color
