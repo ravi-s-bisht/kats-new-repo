@@ -212,7 +212,7 @@ function Page() {
       {showAuthPrompt && <AuthPrompt onAuthSuccess={handleAuthSuccess} />}
 
       {currentStep != 3 && (
-        <div className="flex justify-center items-center">
+        <div className="justify-center items-center">
           <div ref={canvasTopRef} className={styles.mxcanvasTopHelper} />
           <canvas id="mxcanvas" className={styles.mxcanvas} />
         </div>
