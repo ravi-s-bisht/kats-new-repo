@@ -7,6 +7,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { UserProvider } from "@/src/contexts/UserContext";
 import { Toaster } from "@/components/ui/toaster";
 import { AnalysisProvider } from "@/src/lib/context";
+import Head from "next/head";
 // import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] });
@@ -23,6 +24,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
       <body className={inter.className + " " + `flex flex-col bg-white`}>
         <GoogleOAuthProvider clientId={process.env.GOOGLE_LOGIN_API_KEY || ""}>
           <UserProvider>

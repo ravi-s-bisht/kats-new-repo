@@ -1,46 +1,26 @@
 "use client";
 
-export const runtime = "edge";
-
-import { useEffect, useRef, useState } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Video, Camera, Check, Loader2, Info, Square, Play } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import StepProgress from "@/components/health-check/StepProgress";
-import VitalsDisplay, {
-  VitalsData,
-} from "@/components/health-check/VitalsDisplay";
-import VideoCheckIn, {
-  AverageFinalReport,
-} from "@/components/health-check/VideoCheckIn";
-import { useAnalysis } from "@/src/lib/context";
+import { useToast } from "@/hooks/use-toast";
+import { useShenaiSdk } from "@/hooks/useShenaiSdk";
+import { InitializationSettings } from "@/shenai-sdk";
+import Head from "next/head";
+import React, { useEffect, useRef, useState } from "react";
+import styles from "@/styles/Home.module.css";
 import AuthPrompt from "@/components/health-check/AuthPrompt";
 import { useUser } from "@/src/contexts/UserContext";
-import VideoStream from "@/components/health-check/VideoStream";
-import { WebcamFeed } from "@/components/webcam-feed";
+import { useAnalysis } from "@/src/lib/context";
+import { AverageFinalReport } from "@/components/health-check/VideoCheckIn";
+import VitalsDisplay from "@/components/health-check/VitalsDisplay";
+import { Check } from "lucide-react";
 
-const steps = [
-  {
-    id: 1,
-    title: "Start Video",
-    icon: Video,
-    description: "Begin secure video verification",
-  },
-  {
-    id: 2,
-    title: "Video Check",
-    icon: Camera,
-    description: "Position yourself for vital signs analysis",
-  },
-  {
-    id: 3,
-    title: "Complete",
-    icon: Check,
-    description: "Review your health analysis",
-  },
-];
-
-export default function Home() {
+function Page() {
+  // TODO: Remove api key
+  const apiKey = "62ad70ae10a84a028e615b781dd81a73";
+  const shenaiSDK = useShenaiSdk();
+  const [pendingInitialization, setPendingInitialization] = useState(false);
+  const [initializationSettings, setInitializationSettings] =
+    useState<InitializationSettings>();
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(2);
   const { user } = useUser();
   const { analysisData, isLoggedIn, setIsLoggedIn, setAnalysisData } =
@@ -48,15 +28,114 @@ export default function Home() {
   const [showVideoCheck, setShowVideoCheck] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const [isStreamActive, setIsStreamActive] = useState(false);
-  const [heartRate, setHeartRate] = useState<string | number>("--");
-  const lastUpdateRef = useRef<{ time: number; value: string | number }>({
-    time: 0,
-    value: "--",
-  });
+
+  const canvasTopRef = useRef<HTMLDivElement>(null);
+  const scrollToCanvas = () => {
+    console.log("would scroll but no element");
+    if (canvasTopRef.current) {
+      console.log("should scroll to canvas now");
+      canvasTopRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+  const initializeSdk = (
+    apiKey: string,
+    settings: InitializationSettings,
+    onSuccess?: () => void
+  ) => {
+    if (!shenaiSDK) return;
+    setPendingInitialization(true);
+    shenaiSDK.initialize(apiKey, "", settings, (res) => {
+      if (res === shenaiSDK.InitializationResult.OK) {
+        console.log("Shen.AI License result: ", res);
+        shenaiSDK.attachToCanvas("#mxcanvas");
+        onSuccess?.();
+        scrollToCanvas();
+      } else {
+        toast({
+          title: "License initialization problem",
+          description: "Shenai license initialization problem.",
+        });
+      }
+      setPendingInitialization(false);
+    });
+  };
+
+  useEffect(() => {
+    if (!shenaiSDK) return;
+
+    const settings: InitializationSettings = {
+      precisionMode: shenaiSDK.PrecisionMode.STRICT,
+      operatingMode: shenaiSDK.OperatingMode.POSITIONING,
+      measurementPreset: shenaiSDK.MeasurementPreset.ONE_MINUTE_BETA_METRICS,
+      cameraMode: shenaiSDK.CameraMode.DEVICE_ID,
+      onboardingMode: shenaiSDK.OnboardingMode.HIDDEN,
+      showUserInterface: true,
+      showFacePositioningOverlay: true,
+      showVisualWarnings: true,
+      enableCameraSwap: true,
+      showFaceMask: true,
+      showBloodFlow: true,
+      hideShenaiLogo: true,
+      enableStartAfterSuccess: true,
+      enableSummaryScreen: true,
+      enableHealthRisks: true,
+      showOutOfRangeResultIndicators: true,
+      showTrialMetricLabels: false,
+      enableFullFrameProcessing: false,
+    };
+    setInitializationSettings(settings);
+
+    const urlParams = new URLSearchParams(window?.location.search ?? "");
+    console.log("API KEY: ", apiKey);
+    if (apiKey && apiKey.length > 0) {
+      console.log("INITIALIZINGGGG!");
+      initializeSdk(apiKey, settings, () =>
+        console.log("Initialization successfull!!!!")
+      );
+    }
+
+    return () => {
+      shenaiSDK.deinitialize();
+    };
+  }, [shenaiSDK]);
+
+  useEffect(() => {
+    if (shenaiSDK) {
+      let interval: any;
+
+      // Poll the measurement state periodically
+      const pollMeasurementState = async () => {
+        const state = shenaiSDK?.getMeasurementState();
+        console.log(`Current state: `, state);
+
+        if (state === shenaiSDK.MeasurementState.FINISHED) {
+          clearInterval(interval);
+          // Redirect to final report page
+          const measurement = shenaiSDK?.getMeasurementResults();
+
+          console.log("Measurement results: ", measurement);
+          handleVideoComplete({
+            averageHeartRate: measurement?.heart_rate_bpm ?? 0,
+            averageBloodPressure: `${
+              measurement?.systolic_blood_pressure_mmhg ?? 0
+            }/${measurement?.diastolic_blood_pressure_mmhg ?? 0}`,
+            averageHRV: measurement?.hrv_lnrmssd_ms ?? 0,
+            averageBloodGlucose: 0,
+            confidence: 0,
+            totalReadings: 1,
+          });
+        }
+      };
+
+      // Start polling
+      interval = setInterval(pollMeasurementState, 1000);
+
+      // Cleanup on component unmount
+      return () => clearInterval(interval);
+    }
+  }, [shenaiSDK]);
 
   const handleStreamComplete = (finalReport: AverageFinalReport) => {
-    setIsStreamActive(false);
     setAnalysisData({
       heartRate: finalReport.averageHeartRate,
       bp: finalReport.averageBloodPressure,
@@ -64,44 +143,7 @@ export default function Home() {
       bloodGlucose: finalReport.averageBloodGlucose,
       depressionProbability: finalReport.confidence,
     });
-    handleVideoComplete?.();
-  };
-
-  const handleStreamStart = (stream: MediaStream | null) => {
-    setIsStreamActive(!!stream);
-    if (!stream) {
-      setHeartRate("--");
-    }
-  };
-
-  const isSignificantChange = (newValue: string | number) => {
-    const lastUpdate = lastUpdateRef.current;
-    const now = Date.now();
-
-    // Only update if enough time has passed and there's a significant change
-    if (now - lastUpdate.time < 200) return false;
-
-    if (typeof newValue === "number" && typeof lastUpdate.value === "number") {
-      return Math.abs(newValue - lastUpdate.value) > 1;
-    }
-    return true;
-  };
-
-  const handleVitalsUpdate = (vitals: {
-    heartRate: number;
-    bloodPressure: string;
-    hrv: number;
-    bloodGlucose: number;
-  }) => {
-    const newHeartRate = vitals.heartRate > 0 ? vitals.heartRate : "--";
-
-    if (isSignificantChange(newHeartRate)) {
-      lastUpdateRef.current = {
-        time: Date.now(),
-        value: newHeartRate,
-      };
-      setHeartRate(newHeartRate);
-    }
+    // handleVideoComplete?.();
   };
 
   const handleReset = () => {
@@ -115,10 +157,20 @@ export default function Home() {
     setShowVideoCheck(true);
   };
 
-  const handleVideoComplete = () => {
+  const handleVideoComplete = (finalReport: AverageFinalReport) => {
+    setAnalysisData({
+      heartRate: finalReport.averageHeartRate,
+      bp: finalReport.averageBloodPressure,
+      hrv: finalReport.averageHRV,
+      bloodGlucose: finalReport.averageBloodGlucose,
+      depressionProbability: finalReport.confidence,
+    });
     setShowVideoCheck(false);
     setIsAnalyzing(true);
     setCurrentStep(3);
+    if (shenaiSDK) {
+      shenaiSDK.deinitialize();
+    }
     setTimeout(() => {
       setIsAnalyzing(false);
       if (!user) {
@@ -155,33 +207,14 @@ export default function Home() {
     }
   }, []);
 
-  const [isMonitoring, setIsMonitoring] = useState(false);
-
   return (
-    <div className="flex flex-col items-center justify-start w-auto h-screen">
-        
-      {currentStep != 3 && (
-        <VideoStream
-          onStreamStart={handleStreamStart}
-          onComplete={handleStreamComplete}
-          onVitalsUpdate={handleVitalsUpdate}
-          onCancel={handleVideoCancel}
-          handleReset={handleReset}
-        />
-        
-      )}
-
+    <>
       {showAuthPrompt && <AuthPrompt onAuthSuccess={handleAuthSuccess} />}
 
-      {isAnalyzing && (
-        <div className="text-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-            Analyzing Your Results
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600">
-            Please wait while we process your health data...
-          </p>
+      {currentStep != 3 && (
+        <div className="flex justify-center items-center">
+          <div ref={canvasTopRef} className={styles.mxcanvasTopHelper} />
+          <canvas id="mxcanvas" className={styles.mxcanvas} />
         </div>
       )}
 
@@ -213,6 +246,8 @@ export default function Home() {
           )}
         </div>
       )}
-    </div>
+    </>
   );
 }
+
+export default Page;

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "shenai-sdk": "file:shenai-sdk",
     "@azure/app-configuration": "^1.8.0",
     "@azure/storage-blob": "^12.26.0",
     "@daily-co/daily-react": "^0.22.0",
