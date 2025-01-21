@@ -21,6 +21,7 @@ export default function SignInPage() {
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
+      console.log('logging in', tokenResponse);
       try {
         setIsLoading(true);
         const res = await fetch("/api/auth/login", {
@@ -102,7 +103,7 @@ export default function SignInPage() {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Image
-                src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg"
+                src="/Microsoft_logo.svg"
                 alt="Microsoft"
                 width={20}
                 height={20}

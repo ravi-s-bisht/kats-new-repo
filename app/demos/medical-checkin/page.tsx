@@ -12,6 +12,7 @@ import { useAnalysis } from "@/src/lib/context";
 import { AverageFinalReport } from "@/components/health-check/VideoCheckIn";
 import VitalsDisplay from "@/components/health-check/VitalsDisplay";
 import { Check } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 function Page() {
   // TODO: Remove api key
@@ -26,6 +27,7 @@ function Page() {
   const [showVideoCheck, setShowVideoCheck] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const router = useRouter();
 
   const canvasTopRef = useRef<HTMLDivElement>(null);
   const scrollToCanvas = () => {
@@ -59,7 +61,7 @@ function Page() {
   };
 
   useEffect(() => {
-    if (!shenaiSDK) return;
+    if (!shenaiSDK || currentStep == 3) return;
 
     const settings: InitializationSettings = {
       precisionMode: shenaiSDK.PrecisionMode.STRICT,
@@ -101,7 +103,7 @@ function Page() {
       // Poll the measurement state periodically
       const pollMeasurementState = async () => {
         const state = shenaiSDK?.getMeasurementState();
-        console.log(`Current state: `, state);
+        // console.log(`Current state: `, state);
 
         if (state === shenaiSDK.MeasurementState.FINISHED) {
           clearInterval(interval);
@@ -142,9 +144,12 @@ function Page() {
   };
 
   const handleReset = () => {
-    setCurrentStep(1);
+    setCurrentStep(2);
     setShowVideoCheck(false);
     setIsAnalyzing(false);
+
+    // reload the page using next/navigation
+    window.location.reload();
   };
 
   const startVideoCheck = () => {
