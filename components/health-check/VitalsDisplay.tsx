@@ -157,7 +157,7 @@ export default function VitalsDisplay({ data, isLoading = false, handleReset }: 
               sublabel={!data?.heartRate ? undefined :
                 data.heartRate >= 60 && data.heartRate <= 100 ? "Normal" : "Abnormal"}
             />
-            {/* <VitalSign
+            <VitalSign
               icon={Droplet}
               label="Blood Glucose"
               value={data?.bloodGlucose || "--"}
@@ -168,7 +168,7 @@ export default function VitalsDisplay({ data, isLoading = false, handleReset }: 
                 Number(data.bloodGlucose) <= 140 ? "Normal" :
                 Number(data.bloodGlucose) <= 200 ? "High" : "Very High"
               }
-            /> */}
+            />
             <VitalSign
               icon={LineChart}
               label="Heart Rate Variability"

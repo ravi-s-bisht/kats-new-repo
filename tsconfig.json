@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     "app/api/db/knexfile.old.js",
     "src/contexts/LoggedInUserContext.ts"
-  ],
+, "app/demos/medical-checkin/page_before_shen"  ],
   "exclude": ["node_modules"]
 }

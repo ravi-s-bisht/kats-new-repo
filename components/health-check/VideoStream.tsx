@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +32,8 @@ import {
   VitalsDisplay,
 } from "../vitals-display";
 import { subscribeToVitals } from "@/src/lib/vitals-processor";
+import { ReplitVitals } from "@/app/demos/medical-checkin/page";
+import { useAnalysis } from "@/src/lib/context";
 
 interface VideoStreamProps {
   onStreamStart: (stream: MediaStream | null) => void;
@@ -45,6 +47,10 @@ interface VideoStreamProps {
   }) => void;
   onCancel?: () => void;
   handleReset: () => void;
+  videoCloneStream: MediaStream | null;
+  setReplitVitals: Dispatch<SetStateAction<ReplitVitals>>;
+  isMonitoring: boolean;
+  setIsMonitoring: Dispatch<SetStateAction<boolean>>;
 }
 
 export default function VideoStream({
@@ -53,6 +59,10 @@ export default function VideoStream({
   onVitalsUpdate,
   onCancel,
   handleReset,
+  videoCloneStream,
+  setReplitVitals,
+  isMonitoring,
+  setIsMonitoring,
 }: VideoStreamProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -82,6 +92,7 @@ export default function VideoStream({
   const vitalMeasurementsRef = useRef<VitalMeasurements>(
     new VitalMeasurements()
   );
+  const { replitBloodGlucose, setReplitBloodGlucose } = useAnalysis();
   let faceDetection: any;
 
   const [conditions, setConditions] = useState({
@@ -799,15 +810,19 @@ export default function VideoStream({
   const startTimeRef = useRef<number | null>(null);
   const lastElapsedTimeRef = useRef<number>(0);
 
-  const [isMonitoring, setIsMonitoring] = useState(false);
+  // const [isMonitoring, setIsMonitoring] = useState(false);
+
+  const handleMeasurementFinished = () => {
+    stopVideo();
+    setIsMonitoring(false);
+    const finalReport = vitalMeasurementsRef.current.getFinalReport();
+    console.log("Final vital signs report:", finalReport);
+    onComplete?.(finalReport);
+  };
 
   useEffect(() => {
     if (progress >= 100) {
-      stopVideo();
-      setIsMonitoring(false);
-      const finalReport = vitalMeasurementsRef.current.getFinalReport();
-      console.log("Final vital signs report:", finalReport);
-      onComplete?.(finalReport);
+      handleMeasurementFinished();
     }
   }, [progress, onComplete]);
 
@@ -896,46 +911,51 @@ export default function VideoStream({
 
   const handleStopMonitoring = () => {
     setIsMonitoring(false);
-    console.warn("FINAL REPORT: ", {
-      heart:
-        heartRateReplit.length > 0
-          ? Math.round(heartRateReplit[heartRateReplit.length - 1].value)
-          : null,
-      bp:
-        bloodPressure.length > 0
-          ? `${Math.round(
-              bloodPressure[bloodPressure.length - 1].systolic
-            )}/${Math.round(bloodPressure[bloodPressure.length - 1].diastolic)}`
-          : null,
-      bg:
-        bloodGlucose.length > 0
-          ? Math.round(bloodGlucose[bloodGlucose.length - 1].value)
-          : null,
-      hrv: hrv.length > 0 ? Math.round(hrv[hrv.length - 1].value) : null,
-    });
-    console.warn("HRV: ", hrv);
-    onComplete?.({
-      averageBloodPressure:
-        bloodPressure.length > 0
-          ? `${Math.round(
-              bloodPressure[bloodPressure.length - 1].systolic
-            )}/${Math.round(bloodPressure[bloodPressure.length - 1].diastolic)}`
-          : null,
-      averageBloodGlucose:
-        bloodGlucose.length > 0
-          ? Math.round(bloodGlucose[bloodGlucose.length - 1].value)
-          : null,
-      averageHeartRate:
-        heartRateReplit.length > 0
-          ? Math.round(heartRateReplit[heartRateReplit.length - 1].value)
-          : null,
-      averageHRV: hrv.length > 0 ? Math.round(hrv[hrv.length - 1].value) : null,
-      confidence: 50,
-      totalReadings: 10,
-    });
+    console.log("Blood gluc done!!: ", videoCloneStream);
+
+    // stop the camera stream
+    videoCloneStream?.getTracks().forEach((track) => track.stop());
+    // console.warn("FINAL REPORT: ", {
+    //   heart:
+    //     heartRateReplit.length > 0
+    //       ? Math.round(heartRateReplit[heartRateReplit.length - 1].value)
+    //       : null,
+    //   bp:
+    //     bloodPressure.length > 0
+    //       ? `${Math.round(
+    //           bloodPressure[bloodPressure.length - 1].systolic
+    //         )}/${Math.round(bloodPressure[bloodPressure.length - 1].diastolic)}`
+    //       : null,
+    //   bg:
+    //     bloodGlucose.length > 0
+    //       ? Math.round(bloodGlucose[bloodGlucose.length - 1].value)
+    //       : null,
+    //   hrv: hrv.length > 0 ? Math.round(hrv[hrv.length - 1].value) : null,
+    // });
+    // console.warn("HRV: ", hrv);
+    // onComplete?.({
+    //   averageBloodPressure:
+    //     bloodPressure.length > 0
+    //       ? `${Math.round(
+    //           bloodPressure[bloodPressure.length - 1].systolic
+    //         )}/${Math.round(bloodPressure[bloodPressure.length - 1].diastolic)}`
+    //       : null,
+    //   averageBloodGlucose:
+    //     bloodGlucose.length > 0
+    //       ? Math.round(bloodGlucose[bloodGlucose.length - 1].value)
+    //       : null,
+    //   averageHeartRate:
+    //     heartRateReplit.length > 0
+    //       ? Math.round(heartRateReplit[heartRateReplit.length - 1].value)
+    //       : null,
+    //   averageHRV: hrv.length > 0 ? Math.round(hrv[hrv.length - 1].value) : null,
+    //   confidence: 50,
+    //   totalReadings: 10,
+    // });
   };
 
   useEffect(() => {
+    console.log("isMonitoring: ", isMonitoring);
     if (!isMonitoring) {
       // Clear readings when monitoring stops
       setHeartRateReplit([]);
@@ -961,6 +981,8 @@ export default function VideoStream({
           ...prev.slice(-30),
           { timestamp, value: hr < 50 ? 50 + Math.random() * 10 : hr },
         ]);
+
+        setReplitVitals((prev) => ({ ...prev, heartRate: hr }));
       }
 
       if (bp.systolic !== null && bp.diastolic !== null) {
@@ -972,6 +994,11 @@ export default function VideoStream({
             diastolic: bp.diastolic ?? 0,
           },
         ]);
+
+        setReplitVitals((prev) => ({
+          ...prev,
+          bloodPressure: `${bp.systolic}/${bp.diastolic}`,
+        }));
       }
 
       if (bg !== null) {
@@ -979,33 +1006,53 @@ export default function VideoStream({
           ...prev.slice(-30),
           { timestamp, value: bg },
         ]);
+
+        setReplitVitals((prev) => {
+          // console.warn("replit prev vitals: ", prev);
+          return { ...prev, bloodGlucose: bg };
+        });
+        // console.log("Blood Glucose: ", bg, replitBloodGlucose);
+        setReplitBloodGlucose(bg);
       }
 
       if (hrvValue !== null) {
         setHRV((prev) => [...prev.slice(-30), { timestamp, value: hrvValue }]);
+
+        setReplitVitals((prev) => ({ ...prev, hrv: hrvValue }));
       }
     });
 
     return () => unsubscribe();
   }, [isMonitoring]);
 
-  return (
-    <div className="flex flex-col items-center space-y-4 bg-gray-100 h-[calc(100vh-65px)] p-4">
-      <Card className="overflow-hidden bg-gray-900 w-full max-w-[400px] h-[calc(100vh-60px)] sm:h-screen relative rounded-lg">
-        <WebcamFeed isActive={isMonitoring} />
+  return <WebcamFeed isActive={isMonitoring} stream={videoCloneStream} />;
 
-        {/* Overlay Icons */}
-        {/* <div className="absolute top-4 left-4 flex items-center gap-2">
+  // return (
+  // <div className="flex flex-col items-center space-y-4 bg-gray-100 h-[calc(100vh-65px)] p-4">
+  {
+    /* <Card className="overflow-hidden bg-gray-900 w-full max-w-[400px] h-[calc(100vh-60px)] sm:h-screen relative rounded-lg"> */
+  }
+  // <WebcamFeed isActive={isMonitoring} />
+
+  {
+    /* Overlay Icons */
+  }
+  {
+    /* <div className="absolute top-4 left-4 flex items-center gap-2">
           <Info className="h-6 w-6 text-white" />
-        </div> */}
+        </div> */
+  }
 
-        {isLoading && (
+  {
+    /* {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
             <Loader2 className="h-8 w-8 text-white animate-spin" />
           </div>
-        )}
+        )} */
+  }
 
-        {isMonitoring && (
+  {
+    /* {isMonitoring && (
           <>
             <div className="absolute bottom-0 left-0 w-full px-4 py-2 bg-gray-800">
               <div className="flex items-center gap-2">
@@ -1036,25 +1083,35 @@ export default function VideoStream({
             </Button>
           </>
         )}
-      </Card>
+      </Card> */
+  }
 
-      {/* Start Button */}
-      <Button
+  {
+    /* Start Button */
+  }
+  {
+    /* <Button
         disabled={isMonitoring}
         onClick={handleStartMonitoring}
         className="bg-teal-500 text-white py-2 px-8 rounded-lg shadow-md hover:bg-teal-600 focus:ring focus:ring-teal-300"
       >
         START
-      </Button>
+      </Button> */
+  }
 
-      {/* <Card>
+  {
+    /* <Card>
             <CardContent className="p-6">
               <VitalsDisplay isMonitoring={isMonitoring} />
             </CardContent>
-          </Card> */}
+          </Card> */
+  }
 
-      {/* Measurements Section */}
-      <div className="flex justify-around w-full bg-white p-4 rounded-lg shadow-md">
+  {
+    /* Measurements Section */
+  }
+  {
+    /* <div className="flex justify-around w-full bg-white p-4 rounded-lg shadow-md">
         <div className="flex flex-col items-center">
           <span className="text-sm text-gray-600">PULSE</span>
           <span className="text-2xl font-bold text-black">
@@ -1064,10 +1121,14 @@ export default function VideoStream({
           </span>
           <span className="text-xs text-gray-500">bpm</span>
         </div>
-      </div>
+      </div> */
+  }
 
-      {/* Status Message */}
-      <div className="flex justify-around w-full bg-white px-4 py-6 rounded-lg shadow-sm">
+  {
+    /* Status Message */
+  }
+  {
+    /* <div className="flex justify-around w-full bg-white px-4 py-6 rounded-lg shadow-sm">
         {videoRef.current?.srcObject && (
           <>
             {false && !conditions.isStable && (
@@ -1105,9 +1166,9 @@ export default function VideoStream({
             )}
           </>
         )}
-      </div>
-    </div>
-  );
+      </div> */
+  }
+  // </div>
 }
 
 const estimateBloodGlucose = (

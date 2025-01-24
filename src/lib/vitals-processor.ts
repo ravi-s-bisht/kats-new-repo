@@ -147,7 +147,6 @@ function findPeaks(signal: number[], minDistance: number = 7): number[] {
 }
 
 function calculateHRV(peaks: number[]): number | null {
-  console.info("In [calculateHRV] function", peaks);
   if (peaks.length < 1) return null;
 
   // Calculate R-R intervals in milliseconds

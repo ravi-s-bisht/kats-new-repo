@@ -10,6 +10,8 @@ interface AnalysisContextType {
   setIsLoggedIn: (value: boolean) => void;
   isMicrosoftLogin: boolean;
   setIsMicrosoftLogin: (value: boolean) => void;
+  replitBloodGlucose: number | null;
+  setReplitBloodGlucose: (value: number | null) => void;
 }
 
 const AnalysisContext = createContext<AnalysisContextType | undefined>(undefined);
@@ -18,6 +20,7 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
   const [analysisData, setAnalysisData] = useState<VitalsData | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMicrosoftLogin, setIsMicrosoftLogin] = useState(false);
+  const [replitBloodGlucose, setReplitBloodGlucose] = useState<number | null>(null);
 
   return (
     <AnalysisContext.Provider
@@ -27,7 +30,9 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
         isLoggedIn,
         setIsLoggedIn,
         isMicrosoftLogin,
-        setIsMicrosoftLogin
+        setIsMicrosoftLogin,
+        replitBloodGlucose,
+        setReplitBloodGlucose
       }}
     >
       {children}

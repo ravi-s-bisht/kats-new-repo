@@ -3,30 +3,31 @@ import { processVideoFrame } from "@/src/lib/vitals-processor";
 
 interface WebcamFeedProps {
   isActive: boolean;
+  stream?: MediaStream | null;
 }
 
-export function WebcamFeed({ isActive }: WebcamFeedProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+export function WebcamFeed({ isActive, stream }: WebcamFeedProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    let stream: MediaStream | null = null;
     let animationFrame: number;
 
     async function startWebcam() {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "user",
-            width: { ideal: 720 },
-            height: { ideal: 1280 },
-          },
-          audio: false,
-        });
+        if (!stream) throw new Error("No stream available");
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
+        // If a stream is passed, process it
+        const videoTrack = stream.getVideoTracks()[0];
+        const videoTrackSettings = videoTrack?.getSettings();
+
+        // Initialize canvas for frame processing
+        if (canvasRef.current) {
+          const context = canvasRef.current.getContext("2d");
+          if (context) {
+            // Optionally set canvas size based on the stream resolution
+            canvasRef.current.width = videoTrackSettings?.width ?? 1280;
+            canvasRef.current.height = videoTrackSettings?.height ?? 720;
+          }
         }
       } catch (err) {
         console.error("Error accessing webcam:", err);
@@ -34,25 +35,35 @@ export function WebcamFeed({ isActive }: WebcamFeedProps) {
     }
 
     function processFrame() {
-      if (videoRef.current && canvasRef.current && isActive) {
+      if (canvasRef.current && isActive) {
         const context = canvasRef.current.getContext("2d");
-        if (context) {
-          context.drawImage(
-            videoRef.current,
-            0,
-            0,
-            canvasRef.current.width,
-            canvasRef.current.height
-          );
-          const imageData = context.getImageData(
-            0,
-            0,
-            canvasRef.current.width,
-            canvasRef.current.height
-          );
-          processVideoFrame(imageData);
+        if (context && stream) {
+          // Draw the current video frame to the canvas
+          const videoElement = document.createElement("video");
+          videoElement.srcObject = stream;
+          videoElement.play();
+
+          videoElement.onplaying = () => {
+            if (canvasRef.current) {
+              context.drawImage(
+                videoElement,
+                0,
+                0,
+                canvasRef.current.width,
+                canvasRef.current.height
+              );
+              const imageData = context.getImageData(
+                0,
+                0,
+                canvasRef.current.width,
+                canvasRef.current.height
+              );
+
+              processVideoFrame(imageData); // Process the frame
+              animationFrame = requestAnimationFrame(processFrame);
+            }
+          };
         }
-        animationFrame = requestAnimationFrame(processFrame);
       }
     }
 
@@ -61,7 +72,7 @@ export function WebcamFeed({ isActive }: WebcamFeedProps) {
       processFrame();
     }
 
-    const currentCanvas = canvasRef.current;
+    // Cleanup
     return () => {
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
@@ -70,35 +81,45 @@ export function WebcamFeed({ isActive }: WebcamFeedProps) {
         cancelAnimationFrame(animationFrame);
       }
 
-      // Clear the canvas to black when the video stops
-      if (currentCanvas) {
-        const context = currentCanvas.getContext("2d");
+      // clean up canvas
+      if (canvasRef.current) {
+        const context = canvasRef.current.getContext("2d");
         if (context) {
-          context.fillStyle = "black";
-          context.fillRect(0, 0, currentCanvas.width, currentCanvas.height);
+          context.clearRect(
+            0,
+            0,
+            canvasRef.current.width,
+            canvasRef.current.height
+          );
         }
       }
     };
-  }, [isActive]);
+  }, [isActive, stream]);
+
+  useEffect(() => {
+    return () => {
+      if (canvasRef.current) {
+        const context = canvasRef.current.getContext("2d");
+        if (context) {
+          context.clearRect(
+            0,
+            0,
+            canvasRef.current.width,
+            canvasRef.current.height
+          );
+        }
+      }
+    };
+  }, []);
 
   return (
-    <div className="relative w-full h-full aspect-video bg-black rounded-lg overflow-hidden">
-      <video
-        ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover"
-        playsInline
-      />
+    <>
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full"
+        className="hidden absolute inset-0 w-full h-full"
         width="1280"
         height="720"
       />
-      {!isActive && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
-          Click Start to begin
-        </div>
-      )}
-    </div>
-  );
+    </>
+  ); // Return nothing, no DOM elements are needed
 }

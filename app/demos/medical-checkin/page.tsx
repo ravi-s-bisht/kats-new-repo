@@ -13,6 +13,20 @@ import { AverageFinalReport } from "@/components/health-check/VideoCheckIn";
 import VitalsDisplay from "@/components/health-check/VitalsDisplay";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
+import dynamic from 'next/dynamic';
+
+const VideoStream = dynamic(() => import('@/components/health-check/VideoStream'), {
+  ssr: false,
+});
+import { subscribeToVitals } from "@/src/lib/vitals-processor";
+import { VitalReading } from "@/components/vitals-display";
+
+export interface ReplitVitals {
+  heartRate?: number | null;
+  bloodPressure?: string | null;
+  hrv?: number | null;
+  bloodGlucose?: number | null;
+}
 
 function Page() {
   // TODO: Remove api key
@@ -22,13 +36,30 @@ function Page() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(2);
   const { user } = useUser();
-  const { analysisData, isLoggedIn, setIsLoggedIn, setAnalysisData } =
-    useAnalysis();
+  const {
+    analysisData,
+    isLoggedIn,
+    setIsLoggedIn,
+    setAnalysisData,
+    replitBloodGlucose,
+    setReplitBloodGlucose,
+  } = useAnalysis();
   const [showVideoCheck, setShowVideoCheck] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
+  const [replitVitals, setReplitVitals] = useState<ReplitVitals>({
+    heartRate: null,
+    bloodPressure: null,
+    hrv: null,
+    bloodGlucose: null,
+  });
+  const startMonitoringRef = useRef<boolean>(false);
+  const [isMonitoring, setIsMonitoring] = useState(false);
+  const [bloodGlucose, setBloodGlucose] = useState<number[]>([]);
+  const bloodGlucoseRef = useRef<number[]>([]);
+  const cameraCloneStreamRef = useRef<MediaStream | null>(null);
 
   function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
@@ -121,20 +152,61 @@ function Page() {
       const pollMeasurementState = async () => {
         const state = shenaiSDK?.getMeasurementState();
         // console.log(`Current state: `, state);
+        if (shenaiSDK.getOperatingMode() == shenaiSDK.OperatingMode.MEASURE) {
+          const unsubscribe = subscribeToVitals((vitals) => {
+            const {
+              timestamp,
+              heartRate: hr,
+              bloodPressure: bp,
+              bloodGlucose: bg,
+              hrv: hrvValue,
+              signalQuality: sq,
+            } = vitals;
+
+            if (bg !== null) {
+              // console.log("New Blood Glucose Reading:", bg); // Debug log
+
+              // Update bloodGlucose state using the functional form of setState
+              setBloodGlucose((prev) => {
+                const newGlucose = [...prev.slice(-29), bg]; // Keep the last 30 readings
+                // console.log("Updated Blood Glucose Array:", newGlucose); // Debug log
+                return newGlucose;
+              });
+            }
+          });
+        }
+
+        if (
+          shenaiSDK.getOperatingMode() == shenaiSDK.OperatingMode.MEASURE &&
+          !startMonitoringRef.current
+        ) {
+          startMonitoringRef.current = true;
+          setIsMonitoring(true);
+          console.log("started");
+        }
 
         if (state === shenaiSDK.MeasurementState.FINISHED) {
           clearInterval(interval);
           // Redirect to final report page
           const measurement = shenaiSDK?.getMeasurementResults();
+          console.log("FINAL MEASUREMENT: ", replitVitals);
 
           console.log("Measurement results: ", measurement);
+          console.log(
+            "Blood glucose final: ",
+            Math.round(
+              bloodGlucoseRef.current[bloodGlucoseRef.current.length - 1] ?? 0
+            ) ?? null
+          );
           handleVideoComplete({
             averageHeartRate: measurement?.heart_rate_bpm ?? 0,
             averageBloodPressure: `${
               measurement?.systolic_blood_pressure_mmhg ?? 0
             }/${measurement?.diastolic_blood_pressure_mmhg ?? 0}`,
             averageHRV: measurement?.hrv_lnrmssd_ms ?? 0,
-            averageBloodGlucose: 0,
+            averageBloodGlucose: Math.round(
+              bloodGlucoseRef.current[bloodGlucoseRef.current.length - 1] ?? 0
+            ),
             confidence: 0,
             totalReadings: 1,
           });
@@ -149,14 +221,18 @@ function Page() {
     }
   }, [shenaiSDK]);
 
+  useEffect(() => {
+    bloodGlucoseRef.current = bloodGlucose;
+  }, [bloodGlucose]);
+
   const handleStreamComplete = (finalReport: AverageFinalReport) => {
-    setAnalysisData({
-      heartRate: finalReport.averageHeartRate,
-      bp: finalReport.averageBloodPressure,
-      hrv: finalReport.averageHRV,
-      bloodGlucose: finalReport.averageBloodGlucose,
-      depressionProbability: finalReport.confidence,
-    });
+    // setAnalysisData({
+    //   heartRate: finalReport.averageHeartRate,
+    //   bp: finalReport.averageBloodPressure,
+    //   hrv: finalReport.averageHRV,
+    //   bloodGlucose: finalReport.averageBloodGlucose,
+    //   depressionProbability: finalReport.confidence,
+    // });
     // handleVideoComplete?.();
   };
 
@@ -164,8 +240,8 @@ function Page() {
     setCurrentStep(2);
     setShowVideoCheck(false);
     setIsAnalyzing(false);
+    setIsMonitoring(false);
 
-    // reload the page using next/navigation
     window.location.reload();
   };
 
@@ -186,8 +262,12 @@ function Page() {
     setIsAnalyzing(true);
     setCurrentStep(3);
     if (shenaiSDK) {
+      console.log("Deinitializing Shenai SDK");
       shenaiSDK.deinitialize();
     }
+
+    stopCameraCloneStream();
+
     setTimeout(() => {
       setIsAnalyzing(false);
       if (!user) {
@@ -225,6 +305,67 @@ function Page() {
     }
   }, []);
 
+  // Hijack Shen.ai's video stream by copying the canvas
+  useEffect(() => {
+    // Request access to the camera
+    const getCameraFeed = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+        cameraCloneStreamRef.current = stream;
+
+        console.log("Got camera stream:", stream);
+      } catch (error) {
+        console.error("Error accessing camera:", error);
+      }
+    };
+
+    getCameraFeed();
+
+    // Clean up the camera stream when the component unmounts
+    return () => {
+      const stream = cameraCloneStreamRef.current;
+      stopMediaStream(stream);
+    };
+  }, []);
+
+  const stopMediaStream = (stream: MediaStream | null) => {
+    if (stream) {
+      console.log("Stopping media stream");
+      stream.getTracks().forEach((track) => {
+        console.log("Stopping track:", track);
+        track.stop();
+      });
+    }
+  };
+
+  const stopCameraCloneStream = () => {
+    const stream = cameraCloneStreamRef.current;
+    if (stream) {
+      console.log("Stopping camera clone stream");
+      stopMediaStream(stream);
+      cameraCloneStreamRef.current = null;
+    } else {
+      console.log("No camera clone stream to stop");
+    }
+  };
+
+  const handleStreamStart = (stream: MediaStream | null) => {
+    // setIsStreamActive(!!stream);
+    console.log("Stream started");
+  };
+
+  const handleVitalsUpdate = (vitals: {
+    heartRate: number;
+    bloodPressure: string;
+    hrv: number;
+    bloodGlucose: number;
+  }) => {
+    return;
+  };
+
   return (
     <>
       {showAuthPrompt && <AuthPrompt onAuthSuccess={handleAuthSuccess} />}
@@ -237,6 +378,17 @@ function Page() {
           <canvas
             id="mxcanvas"
             className={`${styles.mxcanvas} ${isMobile ? "w-full" : ""}`}
+          />
+          <VideoStream
+            onStreamStart={handleStreamStart}
+            onComplete={handleStreamComplete}
+            onVitalsUpdate={handleVitalsUpdate}
+            onCancel={handleVideoCancel}
+            handleReset={handleReset}
+            videoCloneStream={cameraCloneStreamRef.current}
+            setReplitVitals={setReplitVitals}
+            isMonitoring={isMonitoring}
+            setIsMonitoring={setIsMonitoring}
           />
         </div>
       )}
