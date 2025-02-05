@@ -27,6 +27,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env*.prod
 
 # vercel
 .vercel
@@ -36,3 +37,5 @@ yarn-error.log*
 next-env.d.ts
 
 *knexfile.*.js
+
+.nvmrc
