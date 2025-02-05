@@ -34,13 +34,22 @@ export default function VoiceAvatarsPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8">Avatars Demo</h1>
-      <Link href="/demos/medical-checkin">
-        <Button className="w-max-[500px]">
-          <Video className="mr-2 h-4 w-4" />
-          Medical Check-in
-        </Button>
-      </Link>
+      <section className="grid md:grid-cols-2 gap-6 md:gap-12 w-full max-w-screen-xl mx-auto mb-12">
+        <Image src="/medical-checkin-ai.webp" alt="Medical Checkin" width={640} height={960} className="w-full h-auto aspect-square lg:aspect-[3/2] my-auto object-cover rounded-3xl" />
+        <div className="flex flex-col gap-6 md:gap-8  md:items-start md:text-left justify-center">
+          <h1 className="text-3xl md:text-4xl font-bold">Health Check-in</h1>
+          <p>Explore our cutting-edge Health Check-in demo and see how effortless real-time health tracking can be. Using advanced technology, our system analyzes key metrics like heart rate and stress levels—right from your device. Experience the future of wellness today!</p>
+          <Link href="/demos/medical-checkin">
+            <Button className="h-12 !text-lg !w-full max-w-[500px]" size="lg">
+              <Video className="mr-2 !h-5 !w-5" />
+              Try the Demo
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* <h2 className="text-2xl md:text-3xl font-bold">Avatars Demo</h2> */}
+      
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
         {/* <div className="relative sm:w-64">
           <Input
@@ -72,14 +81,14 @@ export default function VoiceAvatarsPage() {
           </SelectContent>
         </Select> */}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredAvatars.map((avatar) => (
           <Card key={avatar.id} className="flex flex-col">
             <CardHeader>
               <div className="flex items-center justify-center">
                 <CardTitle>{avatar.name}</CardTitle>
               </div>
-              {/* <CardDescription>{avatar.language}</CardDescription> */}
+              <CardDescription>{avatar.language}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col h-full justify-between items-center">
               <div className="flex flex-col">
@@ -113,7 +122,7 @@ export default function VoiceAvatarsPage() {
             </CardContent>
           </Card>
         ))}
-      </div>
+      </div> */}
     </div>
   );
 }
