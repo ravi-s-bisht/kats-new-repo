@@ -43,11 +43,13 @@ export async function POST(request: Request) {
     }
 
     if (!loggedInUser && role == "user") {
-      // Return error message
-      return NextResponse.json(
-        { error: "User not registered." },
-        { status: 404 }
-      );
+      loggedInUser = await db("users")
+        .insert({
+          email: userInfo.data.email,
+          first_name: userInfo.data.given_name,
+          last_name: userInfo.data.family_name,
+          role: "user",
+        })
     }
 
     // if logged in user doesn't exist and role is admin, create a new admin in the database

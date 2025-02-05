@@ -100,9 +100,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     if (isPersonalEmail) {
       const userExists = await checkUserInDatabase(email, "user");
       if (!userExists) {
-        return NextResponse.redirect(
-          `${process.env.BASE_URL}/microsoft-signin-callback?error=User is not registered`
-        );
+        await db("users")
+          .insert({
+            email: userInfo.data.email,
+            first_name: userInfo.data.given_name,
+            last_name: userInfo.data.family_name,
+            role: "user",
+          })
       }
       role = "user";
     } else {
