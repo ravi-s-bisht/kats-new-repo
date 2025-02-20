@@ -137,9 +137,6 @@ dialog {
   box-shadow: theme(boxShadow.long);
   border-radius: theme(borderRadius.3xl);
   animation: appear 0.3s ease-out;
-
-  @screen md {
-  }
 }
 
 dialog::backdrop {

@@ -47,7 +47,7 @@ function Footer() {
             className="login-btn"
             onClick={() => 
               router.push(
-                "https://theavatarx.com/login"
+                "/login"
               )
             }
           >

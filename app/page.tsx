@@ -480,17 +480,16 @@
 // }
 
 // import Navbar from "../components/App";
-import Hero from "../components/HeroSection/TestComp";
+import Hero from "../components/HeroSection/Hero";
 import WhatWeDo from "../components/WhatWeDoSection/WhatWeDo";
 import PatientJourney from "../components/PatientJourney/PatientJourney";
 import CostSaving from "../components/CostSaving/CostSaving";
 import "../styles/global.css"
-import TestComp from "../components/HeroSection/TestComp";
 
 export default function Home() {
   return (
     <>
-      <TestComp />
+      <Hero />
       <WhatWeDo />
       <PatientJourney />
       <CostSaving />

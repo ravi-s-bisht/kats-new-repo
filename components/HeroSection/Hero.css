@@ -97,7 +97,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: red;
 }
 .cta-icon {
   width: 35px;
@@ -144,21 +143,16 @@
   }
   .hero-text-wrapper {
     display: block;
-    color:red
   }
   .hero-content p {
-    font-size: 25px !important;
-    width: 100% !important;
+    font-size: 25px;
+    width: 100%;
   }
   .data-image img {
     max-width: calc(4 / 10 * 100%);
     height: auto;
   }
 }
-/* .test-cls{
-  color:red;
-} */
-
 @media only screen and (max-width: 768px) {
   .hero-content {
     position: relative;
@@ -174,10 +168,6 @@
     position: relative;
     border-bottom-left-radius: 2.5rem;
     border-bottom-right-radius: 2.5rem;
-    background-color: red;
-  }
-  .test-cls{
-    color:red;
   }
   .hero {
     flex-direction: column;

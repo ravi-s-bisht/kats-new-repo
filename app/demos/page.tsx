@@ -33,7 +33,7 @@ export default function VoiceAvatarsPage() {
   );
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 pt-[110px]">
       <section className="grid md:grid-cols-2 gap-6 md:gap-12 w-full max-w-screen-xl mx-auto mb-12">
         <Image src="/medical-checkin-ai.webp" alt="Medical Checkin" width={640} height={960} className="w-full h-auto aspect-square lg:aspect-[3/2] my-auto object-cover rounded-3xl" />
         <div className="flex flex-col gap-6 md:gap-8  md:items-start md:text-left justify-center">

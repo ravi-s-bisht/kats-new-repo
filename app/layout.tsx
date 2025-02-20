@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./global.css";
-import Header from "@/components/Header";
-import { LoggedInUserContextProvider } from "@/src/contexts/LoggedInUserContext";
+// import Header from "@/components/Header";
+// import { LoggedInUserContextProvider } from "@/src/contexts/LoggedInUserContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { UserProvider } from "@/src/contexts/UserContext";
 import { Toaster } from "@/components/ui/toaster";
 import { AnalysisProvider } from "@/src/lib/context";
 import Head from "next/head";
 import Footer from "@/components/Footer/Footer";
-// import { Toaster } from "@/components/ui/toaster"
+import Navbar from "@/components/NavBar/Navbar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -32,7 +32,7 @@ export default function RootLayout({
         <GoogleOAuthProvider clientId={process.env.GOOGLE_LOGIN_API_KEY || ""}>
           <UserProvider>
             <AnalysisProvider>
-              <Header />
+              <Navbar />
               {children}
               <Footer/>
             </AnalysisProvider>

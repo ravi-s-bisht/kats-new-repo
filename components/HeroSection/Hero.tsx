@@ -3,12 +3,12 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 
-import "../WhatWeDoSection/WhatWeDo.css"
+import "./Hero.css";
 
-function TestComp() {
+function Hero() {
   const router = useRouter();
   return (
-    <section className="hero_1">
+    <section className="hero">
       <video className="hero-video" autoPlay loop muted>
         <source src="/vedios/HeroVedioOne.mp4" type="video/mp4" />
         Your browser does not support the video tag.
@@ -28,7 +28,7 @@ function TestComp() {
       </svg>
       <div className="hero-content">
         <div>
-          <h1 className="test-cls">The Future of Digital Connected Care</h1>
+          <h1>The Future of Digital Connected Care</h1>
           <div className="hero-text-wrapper">
             <p>
               Empower people on their journey to health independence with
@@ -59,7 +59,8 @@ function TestComp() {
             </button>
             <button
               className="cta-button margin-left"
-              onClick={() => router.push("https://theavatarx.com/demos")}
+              // onClick={() => router.push("https://theavatarx.com/demos")}
+              onClick={() => router.push("/demos")}
             >
               Try a demo
               <span className="cta-icon">
@@ -210,4 +211,4 @@ function TestComp() {
   );
 }
 
-export default TestComp;
+export default Hero;
