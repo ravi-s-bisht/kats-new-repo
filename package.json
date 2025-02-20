@@ -77,6 +77,7 @@
     "react-hook-form": "^7.53.2",
     "react-sparklines": "^1.7.0",
     "react-time-picker": "^7.0.0",
+    "react-toastify": "^11.0.3",
     "react-virtualized": "^9.22.5",
     "react-virtualized-auto-sizer": "^1.0.25",
     "realtime-ai": "0.2.0",

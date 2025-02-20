@@ -8,6 +8,7 @@ import { UserProvider } from "@/src/contexts/UserContext";
 import { Toaster } from "@/components/ui/toaster";
 import { AnalysisProvider } from "@/src/lib/context";
 import Head from "next/head";
+import Footer from "@/components/Footer/Footer";
 // import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] });
@@ -33,6 +34,7 @@ export default function RootLayout({
             <AnalysisProvider>
               <Header />
               {children}
+              <Footer/>
             </AnalysisProvider>
             <Toaster />
           </UserProvider>
