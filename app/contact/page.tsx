@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import ContactImg from "../../public/images/side-view-banner.jpg";
 import ContactGridImage from "../../public/images/doctor.jpg";
@@ -18,14 +18,17 @@ interface ContactFormData {
 }
 
 export default function Contact() {
+  const [loading, setLoading] = useState(false);
   const {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<ContactFormData>();
 
   const onSubmit: SubmitHandler<ContactFormData> = async (data) => {
     try {
+      setLoading(true);
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -40,6 +43,8 @@ export default function Contact() {
       reset();
     } catch (error) {
       toast.error("Failed to send message. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -132,8 +137,8 @@ export default function Contact() {
                   ></textarea>
                   {errors.message && <p className="form-error">{errors.message.message}</p>}
                 </div>
-                <button type="submit" className="submit-btn">
-                  Submit
+                <button type="submit" className="submit-btn" disabled={loading}>
+                  {loading ? "Sending..." : "Send Message"}
                 </button>
               </form>
             </div>
