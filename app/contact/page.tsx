@@ -25,26 +25,22 @@ export default function Contact() {
   } = useForm<ContactFormData>();
 
   const onSubmit: SubmitHandler<ContactFormData> = async (data) => {
-    console.log(data);
-    toast.success("Message sent successfully!");
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
-    // try {
-    //   const response = await fetch("https://theavatarx.com/api/contact", {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify(data),
-    //   });
+      if (!response.ok) {
+        throw new Error("Failed to send email");
+      }
 
-    //   const result = await response.json();
-    //   console.log("Response:", result);
-
-    //   toast.success("Message sent successfully!");
-    // } catch (error) {
-    //   console.error("Error submitting form:", error);
-    //   toast.error("Failed to send message. Please try again.");
-    // }
+      toast.success("Message sent successfully!");
+      reset();
+    } catch (error) {
+      toast.error("Failed to send message. Please try again.");
+    }
   };
 
   return (
