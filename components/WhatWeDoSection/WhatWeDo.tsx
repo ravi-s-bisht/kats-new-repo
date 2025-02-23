@@ -32,29 +32,45 @@ function WhatWeDo() {
           {services.map((service, index) => (
             <li key={index}>
               <div className="service-item">
-                <img src={service.image} alt={"service.title"} />
+                <Image
+                  src={service.image}
+                  alt={"service.title"}
+                  width={100}
+                  height={100}
+                />
                 <div className="service-info">
                   <p>{service.title}</p>
-                  <span className="arrow" onClick={() => router.push("/contact")}>→</span>
+                  <span
+                    className="arrow"
+                    onClick={() => router.push("/contact")}
+                  >
+                    →
+                  </span>
                 </div>
               </div>
             </li>
           ))}
         </ul>
-        <Image className="connect-lines" src={ConnectLines} alt="AvatarX Health" />
+        <Image
+          className="connect-lines"
+          src={ConnectLines}
+          alt="AvatarX Health"
+        />
         <div className="platform-info">
           <div className="platform-content">
             <p>
               Simplify healthcare access while saving costs with{" "}
-              <span className="highlight">AvatarX.AI</span> Digital Transitions of
-              Care™ platform
+              <span className="highlight">AvatarX.AI</span> Digital Transitions
+              of Care™ platform
             </p>
           </div>
           <div className="platform-imagebx">
-            <img
+            <Image
               src={"/images/avatarAxAi.png"}
               alt="Platform Overview"
               className="platform-image"
+              width={1000}
+              height={600}
             />
           </div>
         </div>

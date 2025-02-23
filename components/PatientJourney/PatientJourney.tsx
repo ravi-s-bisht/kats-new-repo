@@ -24,7 +24,13 @@ function PatientJourney() {
           <Image src={JourneyConnecting} alt="AvatarX Health" />
         </div>
         <div className="center-panel">
-          <img src={'/images/eco-system.webp'} alt="Heart" className="heart-image" />
+          <Image
+            src={"/images/eco-system.webp"}
+            alt="Heart"
+            className="heart-image"
+            width={1000}
+            height={600}
+          />
         </div>
       </div>
     </div>
