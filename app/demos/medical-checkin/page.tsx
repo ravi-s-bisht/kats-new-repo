@@ -270,10 +270,10 @@ function Page() {
 
     setTimeout(() => {
       setIsAnalyzing(false);
-      if (!user) {
-        console.warn("User is not logged in, prompting for auth", user);
-        setShowAuthPrompt(true);
-      }
+      // if (!user) {
+      //   console.warn("User is not logged in, prompting for auth", user);
+      //   setShowAuthPrompt(true);
+      // }
     }, 1000);
   };
 
@@ -289,20 +289,20 @@ function Page() {
   useEffect(() => {
     setIsMobile(isMobileDevice());
     const storedData = localStorage.getItem("analysisData");
-    if (user) {
-      try {
-        // const parsedData: VitalsData = JSON.parse(storedData);
-        // setAnalysisData(parsedData);
-        // localStorage.removeItem("analysisData"); // Clean up after loading
-        handleAuthSuccess();
-      } catch (error) {
-        console.error("Error parsing stored analysis data:", error);
-      }
-    }
+    // if (user) {
+    //   try {
+    //     // const parsedData: VitalsData = JSON.parse(storedData);
+    //     // setAnalysisData(parsedData);
+    //     // localStorage.removeItem("analysisData"); // Clean up after loading
+    //     handleAuthSuccess();
+    //   } catch (error) {
+    //     console.error("Error parsing stored analysis data:", error);
+    //   }
+    // }
 
-    if (!user) {
-      setIsLoggedIn(false);
-    }
+    // if (!user) {
+    //   setIsLoggedIn(false);
+    // }
   }, []);
 
   // Hijack Shen.ai's video stream by copying the canvas
@@ -410,7 +410,8 @@ function Page() {
             </p>
           </div>
 
-          {user ? (
+          <VitalsDisplay data={analysisData} handleReset={handleReset} />
+          {/* {user ? (
             <VitalsDisplay data={analysisData} handleReset={handleReset} />
           ) : (
             <div className="text-center p-6 bg-gray-50 rounded-lg">
@@ -418,7 +419,7 @@ function Page() {
                 Sign in to view your complete health analysis
               </p>
             </div>
-          )}
+          )} */}
         </div>
       )}
     </>
