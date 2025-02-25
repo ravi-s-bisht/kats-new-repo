@@ -9,12 +9,12 @@ function WhatWeDo() {
   const services = [
     {
       title: "Preventative Programs",
-      image: "/images/preventive_programs.jpg",
+      image: "/images/preventive_programs.svg",
     },
-    { title: "Continuous Health Monitoring", image: "/images/image1.png" },
+    { title: "Continuous Health Monitoring", image: "/images/image1.svg" },
     // { title: "Post Discharge Care", image: "/images/post_discharge.jpg" },
-    { title: "Ongoing Care", image: "/images/ongoing_care.jpg" },
-    { title: "Wellbeing Management", image: "/images/image4.jpg" },
+    { title: "Ongoing Care", image: "/images/ongoing_care.svg" },
+    { title: "Wellbeing Management", image: "/images/image4.svg" },
   ];
   const router = useRouter();
   return (
@@ -35,8 +35,9 @@ function WhatWeDo() {
                 <Image
                   src={service.image}
                   alt={"service.title"}
-                  width={100}
-                  height={100}
+                  width={1000}
+                  height={600}
+                  unoptimized
                 />
                 <div className="service-info">
                   <p>{service.title}</p>
