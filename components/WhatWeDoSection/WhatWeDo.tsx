@@ -9,12 +9,12 @@ function WhatWeDo() {
   const services = [
     {
       title: "Preventative Programs",
-      image: "/images/preventive_programs.svg",
+      image: "/images/preventive_programs.jpg",
     },
-    { title: "Continuous Health Monitoring", image: "/images/image1.svg" },
+    { title: "Continuous Health Monitoring", image: "/images/image1.jpg" },
     // { title: "Post Discharge Care", image: "/images/post_discharge.jpg" },
-    { title: "Ongoing Care", image: "/images/ongoing_care.svg" },
-    { title: "Wellbeing Management", image: "/images/image4.svg" },
+    { title: "Ongoing Care", image: "/images/ongoing_care.jpg" },
+    { title: "Wellbeing Management", image: "/images/image4.jpg" },
   ];
   const router = useRouter();
   return (
