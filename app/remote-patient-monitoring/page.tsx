@@ -1,7 +1,7 @@
 "use client";
 import Image from 'next/image';
 import CCMIMage from '../../public/images/ccm-image.jpg';
-import React from 'react';
+import React, { useState } from 'react';
 import PatientOutcomes from '../../public/images/patient-outcomes.jpg';
 import PatientExp from '../../public/images/patient-experience.jpg';
 import PatientEngage from '../../public/images/patient-engagement.jpg';
@@ -9,8 +9,35 @@ import DecreaseWorkload from '../../public/images/decrease-workload.jpg';
 import RPMProgram from '../../public/images/rpm-program.jpg';
 import { useRouter } from "next/navigation";
 
+const AccordionItem = ({ title, content }: { title: string; content: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className={isOpen ? "mb-4 accordion-active" : "mb-4"}>
+      <button
+        className="w-full flex justify-between items-center p-4 text-lg font-semibold accordion-btn transition"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {title}
+        <span className="text-xl flex-none">{isOpen ? "−" : "+"}</span>
+      </button>
+      <div
+        className={`overflow-hidden transition-all duration-300 ${isOpen ? "max-h-50 p-4" : "max-h-0 p-0"
+          }`}
+      >
+        <p className="text-gray-700">{content}</p>
+      </div>
+    </div>
+  );
+};
+
 const RemotePatientMonitoring = () => {
   const router = useRouter();
+  const accordionData = [
+    { title: "How do RPM programs engage with patients with chronic diseases outside the office?", content: "Engagement with patients begins when they are regularly using their connected devices and taking vital readings. Now, they’re participating in their health. The next layer involves 1:1 engagement with the clinical monitoring team. These licensed and experienced nurses have regular contact and touchpoints with patients to remind them to use their devices and take their medications. Patients can also ask nurses questions and speak to the same one most days, building trust." },
+    { title: "How does our RPM platform reduce strains and constraints on staff?", content: "You can operate a robust RPM program without adding staff or overburdening them. With our care experts able to resolve about 95% of the alerts, your team can get the help they need quickly and efficiently. You can optimize staff time by having the right data at the right time." },
+    { title: "How does remote patient monitoring technology reduce emergency care?", content: "By monitoring patients remotely, you can access real-time data revealing any fluctuations in their vitals. If they reach a threshold, you receive immediate alerts to intervene before the need arises for emergency department visits or hospitalization. Over time, you’ll also have more data to demonstrate whether the current treatment is working." },
+  ];
   return (
     <div>
       <section className="inner-hero-section">
@@ -39,28 +66,28 @@ const RemotePatientMonitoring = () => {
           <div className='lg:w-4/5'>
             <h2 className='section-heading' data-aos="fade-up" data-aos-duration="500">Improve patient outcomes with remote patient monitoring.</h2>
           </div>
-          <div className='lg:w-1/5 flex-none'  data-aos="fade-down" data-aos-duration="500">
+          <div className='lg:w-1/5 flex-none' data-aos="fade-down" data-aos-duration="500">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 131 157" className="ccm-svg w-[110px] lg:w-[131px]"><path fill="url(#StroyDecorationTop_svg__a)" fill-rule="evenodd" d="M15.272 113.45c.027-15.605 12.693-28.237 28.296-28.223 15.606.014 28.25 12.668 28.25 28.273s-12.644 28.259-28.25 28.273c-15.603.014-28.27-12.618-28.296-28.223z" clip-rule="evenodd"></path><path stroke="#FC1754" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.451" stroke-width="0.986" d="M8.5 113.511c.027-19.32 15.703-34.964 35.023-34.951s34.977 15.679 34.977 35-15.654 34.986-34.975 35c-19.32.014-34.998-15.63-35.025-34.951z"></path><path stroke="#FC1754" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.149" stroke-width="0.988" d="M1 113.452c.027-23.464 19.063-42.465 42.525-42.45C66.988 71.015 86 90.04 86 113.502s-19.014 42.486-42.475 42.499S1.027 137.013 1 113.551z"></path><path fill="#fff" fill-rule="evenodd" d="M52.324 109.55c0-4.645-4.18-8.401-8.824-8.401s-8.824 3.762-8.824 8.4c0 1.849.787 3.345 1.8 4.776h-.017c.65.895 1.275 1.056 1.879 2.087.877 1.503 1.078 2.427 1.115 3.321.024.509.441.91.953.912h.532a.24.24 0 0 0 .238-.238v-5.635a1.9 1.9 0 0 0-.203-.852l-1.252-2.504a.626.626 0 0 1 .558-.906.62.62 0 0 1 .559.351l1.51 3.065c.13.262.195.548.195.84v5.64a.24.24 0 0 0 .238.24h1.432a.24.24 0 0 0 .238-.24v-5.64c0-.292.065-.578.197-.84l1.514-3.077a.599.599 0 0 1 1.05-.075c.12.184.128.419.024.612l-1.27 2.54c-.13.268-.202.56-.202.852v5.629a.24.24 0 0 0 .238.238h.596a.953.953 0 0 0 .953-.894c.054-.918.28-1.926 1.097-3.339.602-1.031 1.229-1.192 1.88-2.087h-.006c1.013-1.43 1.8-2.927 1.8-4.775zm-9.896 16.402h2.146a.837.837 0 0 0 .836-.835.84.84 0 0 0-.836-.835h-2.146a.837.837 0 0 0-.836.835c0 .459.377.835.836.835m-1.194-2.624h4.532a.836.836 0 0 0 .836-.834.84.84 0 0 0-.836-.835h-4.53a.84.84 0 0 0-.836.835c0 .459.377.834.836.834z" clip-rule="evenodd"></path><path fill="url(#StroyDecorationTop_svg__b)" fill-rule="evenodd" d="M72.473 35.54c.023-12.343 10.042-22.334 22.386-22.322 12.342.011 22.343 10.02 22.343 22.364.001 12.343-9.999 22.353-22.343 22.365s-22.363-9.98-22.386-22.323z" clip-rule="evenodd"></path><path stroke="#1279BA" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.451" stroke-width="0.5" d="M66.624 35.458c.023-15.596 12.679-28.223 28.274-28.211 15.596.011 28.232 12.658 28.232 28.253s-12.637 28.241-28.233 28.253c-15.594.01-28.25-12.617-28.273-28.212z"></path><path stroke="#1279BA" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.149" stroke-width="0.5" d="M59.877 35.458C59.9 16.136 75.577.488 94.898.5s34.979 15.678 34.979 35-15.657 34.988-34.979 35c-19.321.011-34.998-15.636-35.021-34.958z"></path><path fill="#fff" fill-rule="evenodd" d="M99.107 23.91h-8.458a3.17 3.17 0 0 0-3.173 3.174v16.918c0 .841.335 1.648.93 2.243a3.17 3.17 0 0 0 2.243.929h8.46a3.168 3.168 0 0 0 3.172-3.172V27.084a3.17 3.17 0 0 0-3.172-3.173zm-2.115 21.15h-4.23v-1.058h4.23zm3.436-3.174H89.326V27.085h11.102z" clip-rule="evenodd"></path><defs><linearGradient id="StroyDecorationTop_svg__a" x1="21.831" x2="62.035" y1="95.236" y2="134.818" gradientUnits="userSpaceOnUse"><stop stop-color="#FFADE9"></stop><stop offset="0.522" stop-color="#FC668E"></stop><stop offset="1" stop-color="#FC1754"></stop></linearGradient><linearGradient id="StroyDecorationTop_svg__b" x1="112.013" x2="80.211" y1="21.135" y2="52.445" gradientUnits="userSpaceOnUse"><stop stop-color="#95D6FF"></stop><stop offset="0.522" stop-color="#2592D6"></stop><stop offset="1" stop-color="#005388"></stop></linearGradient></defs></svg>
           </div>
         </div>
         <div className='grid-content justify-content-end mt-10'>
           <div className='lg:w-1/3 flex-none'>
-            <svg xmlns="http://www.w3.org/2000/svg"  data-aos="fade-down" data-aos-duration="500" fill="none" viewBox="0 0 77 77" className="ccm-svg2 w-[60px] h-auto lg:w-[76px] ml-auto mr-25"><g clip-path="url(#StroyDecorationBottom_svg__a)"><path fill="url(#StroyDecorationBottom_svg__b)" fill-rule="evenodd" d="M13.15 38.243c.028-13.899 11.31-25.147 25.209-25.133s25.158 11.285 25.157 25.184c0 13.898-11.26 25.169-25.158 25.182-13.898.014-25.18-11.234-25.208-25.133z" clip-rule="evenodd"></path><path stroke="#FC1754" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.451" stroke-width="0.984" d="M7.173 38.296C7.201 21.12 21.141 7.212 38.318 7.226c17.178.013 31.095 13.942 31.095 31.12 0 17.177-13.918 31.106-31.095 31.12S7.201 55.571 7.173 38.394z"></path><path stroke="#FC1754" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.149" stroke-width="0.987" d="M.494 38.244C.52 17.378 17.45.48 38.318.494c20.867.013 37.776 16.933 37.776 37.8s-16.91 37.786-37.776 37.8S.521 59.208.494 38.341z"></path><path fill="#fff" fill-rule="evenodd" d="M48.94 48.025h-1.934v-.97h-.97v.97h-1.93v-.97h-.97v.97H41.2v-.97h-.97v.97h-1.933v-.97h-.97v.97h-1.934v-.97h-.97v.97h-4.26l5.1-3.065 2.526-7.378 3.75 6.59 7.265-12.106-1.66-.998-5.561 9.27-4.236-7.444-3.686 10.77-5.048 3.034v-19.97H26.68v23.23h23.23v-2.903h-.97zm0-21.296h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.9 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm20.323 2.904h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.9 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm20.323 2.9h.97v.97h-.97zm-5.805 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm-5.808 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm20.323 2.905h.97v.97h-.97zm-8.708 0h.97v.97h-.97zm-5.808 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm20.323 2.905h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-14.516 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm20.323 2.904h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-8.708 0h.97v.97h-.97zm-5.808 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm20.323 2.9h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.9 0h.97v.97h-.97zm-5.808 0h.97v.97h-.97zm-8.711 0h.97v.97h-.97z" clip-rule="evenodd"></path></g><defs><linearGradient id="StroyDecorationBottom_svg__b" x1="18.993" x2="54.803" y1="22.025" y2="57.281" gradientUnits="userSpaceOnUse"><stop stop-color="#FFADE9"></stop><stop offset="0.522" stop-color="#FC668E"></stop><stop offset="1" stop-color="#FC1754"></stop></linearGradient><clipPath id="StroyDecorationBottom_svg__a"><path fill="#fff" d="M0 0h76.587v76.587H0z"></path></clipPath></defs></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" data-aos="fade-down" data-aos-duration="500" fill="none" viewBox="0 0 77 77" className="ccm-svg2 w-[60px] h-auto lg:w-[76px] ml-auto mr-25"><g clip-path="url(#StroyDecorationBottom_svg__a)"><path fill="url(#StroyDecorationBottom_svg__b)" fill-rule="evenodd" d="M13.15 38.243c.028-13.899 11.31-25.147 25.209-25.133s25.158 11.285 25.157 25.184c0 13.898-11.26 25.169-25.158 25.182-13.898.014-25.18-11.234-25.208-25.133z" clip-rule="evenodd"></path><path stroke="#FC1754" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.451" stroke-width="0.984" d="M7.173 38.296C7.201 21.12 21.141 7.212 38.318 7.226c17.178.013 31.095 13.942 31.095 31.12 0 17.177-13.918 31.106-31.095 31.12S7.201 55.571 7.173 38.394z"></path><path stroke="#FC1754" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.149" stroke-width="0.987" d="M.494 38.244C.52 17.378 17.45.48 38.318.494c20.867.013 37.776 16.933 37.776 37.8s-16.91 37.786-37.776 37.8S.521 59.208.494 38.341z"></path><path fill="#fff" fill-rule="evenodd" d="M48.94 48.025h-1.934v-.97h-.97v.97h-1.93v-.97h-.97v.97H41.2v-.97h-.97v.97h-1.933v-.97h-.97v.97h-1.934v-.97h-.97v.97h-4.26l5.1-3.065 2.526-7.378 3.75 6.59 7.265-12.106-1.66-.998-5.561 9.27-4.236-7.444-3.686 10.77-5.048 3.034v-19.97H26.68v23.23h23.23v-2.903h-.97zm0-21.296h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.9 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm20.323 2.904h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.9 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm20.323 2.9h.97v.97h-.97zm-5.805 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm-5.808 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm20.323 2.905h.97v.97h-.97zm-8.708 0h.97v.97h-.97zm-5.808 0h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm20.323 2.905h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-14.516 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm20.323 2.904h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-8.708 0h.97v.97h-.97zm-5.808 0h.97v.97h-.97zm-2.903 0h.97v.97h-.97zm20.323 2.9h.97v.97h-.97zm-2.904 0h.97v.97h-.97zm-2.9 0h.97v.97h-.97zm-5.808 0h.97v.97h-.97zm-8.711 0h.97v.97h-.97z" clip-rule="evenodd"></path></g><defs><linearGradient id="StroyDecorationBottom_svg__b" x1="18.993" x2="54.803" y1="22.025" y2="57.281" gradientUnits="userSpaceOnUse"><stop stop-color="#FFADE9"></stop><stop offset="0.522" stop-color="#FC668E"></stop><stop offset="1" stop-color="#FC1754"></stop></linearGradient><clipPath id="StroyDecorationBottom_svg__a"><path fill="#fff" d="M0 0h76.587v76.587H0z"></path></clipPath></defs></svg>
           </div>
           <div className='lg:w-2/3 text-left'>
             <p className='section-text' data-aos="fade-up" data-aos-duration="500">Gain visibility into your patients outside of the office visit.</p>
             <button className='cta-button' onClick={() =>
-                router.push(
-                  "https://calendly.com/phanig/30-minute?month=2025-02"
-                )
-              } data-aos="fade-up" data-aos-duration="500">Request a demo</button>
+              router.push(
+                "https://calendly.com/phanig/30-minute?month=2025-02"
+              )
+            } data-aos="fade-up" data-aos-duration="500">Request a demo</button>
           </div>
         </div>
       </section>
       <section className='section-card counter-section relative z-1'>
         <h2 className='section-heading relative z-1' data-aos="fade-up" data-aos-duration="500">How remote patient monitoring drives better clinical outcomes.</h2>
         <ul className='flex flex-wrap'>
-          <li className='text-left p-5 w-full xs:w-1/2 lg:w-1/4'  data-aos="fade-up" data-aos-duration="500" data-aos-delay="0">
+          <li className='text-left p-5 w-full xs:w-1/2 lg:w-1/4' data-aos="fade-up" data-aos-duration="500" data-aos-delay="0">
             <div className='relative inline-block'>
               <p className='counter-number'>-11</p>
             </div>
@@ -163,6 +190,14 @@ const RemotePatientMonitoring = () => {
           </div>
         </section>
       </div>
+      <section className='faq-section'>
+        <h2 className='section-heading'>FAQs about remote patient monitoring</h2>
+        <div>
+          {accordionData.map((item, index) => (
+            <AccordionItem key={index} title={item.title} content={item.content} />
+          ))}
+        </div>
+      </section>
     </div>
   );
 };

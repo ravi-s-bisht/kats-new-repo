@@ -1,7 +1,7 @@
 "use client";
 import Image from 'next/image';
 import CCMIMage from '../../public/images/ccm-image.jpg';
-import React from 'react';
+import React, { useState } from 'react';
 import HeadsetIcon from '../../public/headset-icon.svg';
 import PeopleChatting from '../../public/people-chatting-icon.svg';
 import MedicineIcon from '../../public/geriatric-medicine-icon.svg';
@@ -21,8 +21,39 @@ import CareCoordinate from '../../public/images/care-coordination.jpg';
 import ClaimsCMS from '../../public/images/claims-cms.jpg';
 import { useRouter } from "next/navigation";
 
+const AccordionItem = ({ title, content }: { title: string; content: string }) => {
+    const [isOpen, setIsOpen] = useState(false);
+  
+    return (
+      <div className={isOpen ? "mb-4 accordion-active" : "mb-4"}>
+        <button
+          className="w-full flex justify-between items-center p-4 text-lg font-semibold accordion-btn transition"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          {title}
+          <span className="text-xl flex-none">{isOpen ? "−" : "+"}</span>
+        </button>
+        <div
+          className={`overflow-hidden transition-all duration-300 ${
+            isOpen ? "max-h-50 p-4" : "max-h-0 p-0"
+          }`}
+        >
+          <p className="text-gray-700">{content}</p>
+        </div>
+      </div>
+    );
+  };
+
 const Page = () => {
     const router = useRouter();
+    const accordionData = [
+        { title: "What is chronic care management?", content: "Chronic care management is a type of remote healthcare that involves supporting patients with two or more chronic diseases. It involves clinician-directed comprehensive care management, care coordination, and patient support via non-face-to-face encounters. The aim is to strengthen the coordination of care and improve clinical outcomes." },
+        { title: "How does Medicare reimbursement work for CCM?", content: "Reimbursement from Medicare is on a per-patient monthly basis. The reimbursement rate depends on the complexity and time required for care delivery. There are four CPT® Codes associated with CCM: 99490,99439, 99491, and 99437. You can provide and bill for CCM in tandem with RPM or RTM. FQHCs and RHCs can use G0511 to bill for CCM." },
+        { title: "What diseases can CCM manage?", content: "CCM can be a valuable strategy to support many chronic conditions. The most common include CHF (congestive heart failure), COPD (chronic obstructive pulmonary disease), diabetes, hypertension, Alzheimer’s/dementia, arthritis, and cancer." },
+        { title: "Can third parties perform the clinical staff portion of CCM?", content: "Yes, clinical staff external to a practice can provide monitoring, but it must be under the direct supervision of a QHCP." },
+        { title: "Does CCM require a diagnosis?", content: "Yes, to qualify for CCM reimbursement, a patient must receive a diagnosis of two or more chronic diseases lasting 12 months or longer." },
+        { title: "What does enrolling patients in CCM entail?", content: "Enrolling patients in CCM includes: Creating and maintaining comprehensive care plans, Coordinating with other clinicians, Managing medication, Offering assistance for chronic disease self-management." },
+      ];
     return (
         <div>
             <section className="inner-hero-section">
@@ -237,6 +268,14 @@ const Page = () => {
                             <p>Submit claims to CMS and/or private insurers.</p>
                         </div>
                     </div>
+                </div>
+            </section>
+            <section className='faq-section'>
+                <h2 className='section-heading'>FAQs about connected remote patient monitoring devices</h2>
+                <div>
+                    {accordionData.map((item, index) => (
+                        <AccordionItem key={index} title={item.title} content={item.content} />
+                    ))}
                 </div>
             </section>
         </div>
