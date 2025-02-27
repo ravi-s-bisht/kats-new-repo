@@ -10,6 +10,7 @@ import { AnalysisProvider } from "@/src/lib/context";
 import Head from "next/head";
 import Footer from "@/components/Footer/Footer";
 import Navbar from "@/components/NavBar/Navbar";
+import AOSInitializer from "@/components/AOSInitializer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,12 +30,13 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <body className={inter.className + " " + `flex flex-col bg-white`}>
+        <AOSInitializer />
         <GoogleOAuthProvider clientId={process.env.GOOGLE_LOGIN_API_KEY || ""}>
           <UserProvider>
             <AnalysisProvider>
               <Navbar />
               {children}
-              <Footer/>
+              <Footer />
             </AnalysisProvider>
             <Toaster />
           </UserProvider>

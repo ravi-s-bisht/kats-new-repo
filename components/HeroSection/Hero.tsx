@@ -28,15 +28,18 @@ function Hero() {
       </svg>
       <div className="hero-content">
         <div>
-          <h1>The Future of Digital Connected Care</h1>
+          <h1 data-aos="fade-up">The Future of Digital Connected Care</h1>
           <div className="hero-text-wrapper">
-            <p>
+            <p data-aos="fade-up" data-aos-delay="200">
               Empower people on their journey to health independence with
               real-time monitoring and AI-driven insights.
             </p>
             <button
               className="cta-button"
               onClick={() => router.push("/contact")}
+              data-aos="fade-left"
+              data-aos-delay="300"
+              data-aos-offset="50"
             >
               Talk to an Expert
               <span className="cta-icon">
@@ -61,6 +64,9 @@ function Hero() {
               className="cta-button margin-left"
               // onClick={() => router.push("https://theavatarx.com/demos")}
               onClick={() => router.push("/demos")}
+              data-aos="fade-left"
+              data-aos-delay="300"
+              data-aos-offset="50"
             >
               Try a demo
               <span className="cta-icon">

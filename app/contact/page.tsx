@@ -67,13 +67,14 @@ export default function Contact() {
           </svg>
         </div>
         <div className="inner-hero-content">
-          <h4 className="eyebrow-heading">Get in touch</h4>
-          <h2 className="heading">Contact Us</h2>
+          <h4 className="eyebrow-heading text-left">Get in touch</h4>
+          <h2 className="heading text-left">Contact Us</h2>
         </div>
       </section>
       <section className="contact-form">
         <div className="inner-container">
-          <h2 className="contact-heading">
+          <h2 className="contact-heading" data-aos="fade-up" 
+                data-aos-duration="500">
             Take your first step to{" "}
             <span className="highlight-text">transforming care delivery</span>{" "}
             for your organization here!
@@ -85,14 +86,19 @@ export default function Contact() {
                 className="contact-grid-image"
                 alt="AvatarX Health"
                 height={800}
+                data-aos="fade-right"
+                data-aos-duration="500"
               />
               <Image
                 src={ContactGridPattern}
                 className="contact-grid-pattern"
+                data-aos="fade-down"
+                data-aos-duration="500"
                 alt="AvatarX Health"
               />
             </div>
-            <div className="contact-form-wrapper">
+            <div className="contact-form-wrapper" data-aos="fade-left" 
+                data-aos-duration="500">
               <h2 className="form-heading">Share Your Details</h2>
               <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="form-wrapper">

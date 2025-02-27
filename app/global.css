@@ -442,16 +442,6 @@ textarea.contact-field
 {
   justify-content: flex-end;
 }
-.ccm-content .grid-content .ccm-svg
-{
-  max-width: 131px;
-  width: 100%;
-}
-.ccm-content .grid-content .ccm-svg2
-{
-  max-width: 72px;
-  width: 100%;
-}
 .cta-button {
   margin-top: 20px;
   padding: 0 30px;
@@ -487,7 +477,7 @@ textarea.contact-field
 {
   display: grid;
   grid-template-columns: repeat(3,1fr);
-  grid-gap: 20px;
+  grid-gap: 90px 20px;
 }
 .inner-card
 {
@@ -497,16 +487,31 @@ textarea.contact-field
 }
 .inner-card .inner-card-icon
 {
+  position: relative;
   margin-left: auto;
   margin-right: auto;
   width: 90px;
   height: 90px;
-  background: #fff;
+  background: linear-gradient(#6c6c6c ,#000000);
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   margin-bottom: 40px;
+  margin-top: -90px;
+  z-index: 1;
+}
+.inner-card .inner-card-icon:before
+{
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 2px dashed #000;
+  z-index: -1;
 }
 .inner-card p
 {
@@ -527,16 +532,17 @@ textarea.contact-field
   position: relative;
   max-width: 1440px;
   margin-left: auto;
-  margin-top: 6rem;
+  margin-top: 1rem;
   margin-right: auto;
-  padding-top: 4.6875rem;
-  padding-bottom: 4.6875rem;
-  padding-left: 3.125rem;
-  padding-right: 3.125rem;
+  padding-top: 2.6875rem;
+  padding-bottom: 2.6875rem;
+  padding-left: 2.125rem;
+  padding-right: 2.125rem;
   background: hsla(0,0%,96%,.25);
   border-radius: 3.75rem;
   overflow: clip;
   z-index: 1;
+  box-sizing: border-box;
 }
 .bg-grid
 {
@@ -559,18 +565,122 @@ textarea.contact-field
 }
 .grid-section .inner-grid h3
 {
-  font-size: 30px;
+  font-size: 25px;
   text-align: left;
   margin-bottom: 20px;
 }
 .grid-section .inner-grid p
 {
-  font-size: 18px;
+  font-size: 16px;
   text-align: left;
 }
 .grid-section .inner-grid img
 {
   border-radius: 20px;
+}
+.steps-section
+{
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 3.125rem;
+  padding-right: 3.125rem;
+  padding-top: 60px;
+}
+.steps-section .section-heading
+{
+  font-size: 50px;
+  font-family: 'Roboto';
+  color: #2e3d48;
+  text-align: left;
+  line-height: 1;
+  margin-bottom: 40px;
+}
+.main-grid-container
+{
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 3.125rem;
+  padding-right: 3.125rem;
+}
+.steps-section .inner-steps
+{
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+}
+.steps-section .inner-steps .step-card
+{
+  padding: 30px;
+  border-right: 1px dashed #ccc;
+  border-bottom: 1px dashed #ccc;
+}
+.steps-section .inner-steps .step-card .step-card-img
+{
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 20px;
+  position: relative;
+  width: 150px;
+  height: 150px;
+  padding: 10px;
+  background: #f2f2f2;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.steps-section .inner-steps .step-card .step-number
+{
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(151deg, #6e6e6e, #000);
+  color: #fff;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.steps-section .inner-steps .step-card p
+{
+  font-size: 22px;
+}
+.steps-section .inner-steps .step-card .step-card-img img
+{
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.counter-section .section-heading
+{
+  max-width: 1000px;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 60px;
+  font-size: 50px;
+}
+.counter-number
+{
+  text-align: left;
+  font-size: 80px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0;
+}
+.counter-text
+{
+  text-align: left;
+  font-size: 18px;
+}
+.grid-section .inner-grid img
+{
+  height: 450px;
+  border-radius: 20px;
+  object-fit: cover;
 }
 @media (prefers-color-scheme: dark) {
   html {
@@ -619,6 +729,14 @@ textarea.contact-field
     font-size: 30px;
   }
   .contact-form .inner-container
+  {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+  .ccm-content,
+  .section-card,
+  .main-grid-container,
+  .steps-section
   {
     padding-left: 1.25rem;
     padding-right: 1.25rem;
@@ -673,5 +791,78 @@ textarea.contact-field
     width: calc(8/10*100%);
     padding-left: 1.25rem;
     padding-right: 1.25rem;
+  }
+  .ccm-content .section-heading
+  {
+    font-size: 25px;
+  }
+  .grid-section .inner-grid
+  {
+    grid-template-columns: repeat(1,1fr);
+  }
+  .counter-section .section-heading
+  {
+    font-size: 30px;
+  }
+  .bg-pattern
+  {
+    left: 0;
+  }
+  .grid-section .inner-grid h3
+  {
+    font-size: 20px;
+    line-height: 1;
+  }
+  .grid-section .inner-grid p
+  {
+    font-size: 14px;
+  }
+  .counter-number
+  {
+    font-size: 50px;
+  }
+  .counter-text
+  {
+    font-size: 16px;
+  }
+  .section-card .section-heading
+  {
+    font-size: 30px;
+  }
+  .grid-col-2
+  {
+    grid-template-columns: repeat(1,1fr);
+    gap: 60px 20px;
+  }
+  .steps-section .inner-steps
+  {
+    grid-template-columns: repeat(1,1fr);
+  }
+  .steps-section .section-heading
+  {
+    font-size: 30px;
+  }
+  .steps-section .inner-steps .step-card
+  {
+    border-right: none;
+  }
+  .inner-card p
+  {
+    font-size: 16px;
+  }
+  .inner-card .inner-card-icon
+  {
+    width: 70px;
+    height: 70px;
+    margin-top: -60px;
+  }
+  .inner-card .inner-card-icon:before
+  {
+    width: 90px;
+    height: 90px;
+  }
+  .ccm-content .section-text
+  {
+    font-size: 20px;
   }
 }
