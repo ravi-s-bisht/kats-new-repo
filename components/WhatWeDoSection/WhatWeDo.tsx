@@ -11,25 +11,29 @@ function WhatWeDo() {
       title: "Preventative Programs",
       image: "/images/preventive_programs.jpg",
       backfaceimage: "/images/preventative-programs-hover.webp",
-      backfacecontent: "Proactive wellness solutions for a healthier future."
+      backfacecontent: "Proactive wellness solutions for a healthier future.",
+      link: "/chronic-care-management"
     },
     { 
       title: "Continuous Health Monitoring", 
       image: "/images/image1.jpg",
       backfaceimage: "/images/continuous-health-monitoring-hover.webp",
-      backfacecontent: "Stay connected with live patient monitoring."
+      backfacecontent: "Stay connected with live patient monitoring.",
+      link: "/remote-patient-monitoring"
     },
     // { title: "Post Discharge Care", image: "/images/post_discharge.jpg" },
     { 
       title: "Ongoing Care", 
       image: "/images/ongoing_care.jpg",
       backfaceimage: "/images/chronic-condition-treatment-hover.webp",
-      backfacecontent: "Comprehensive support for long-term health management."
+      backfacecontent: "Comprehensive support for long-term health management.",
+      link: "/contact"
     },
     { title: "Wellbeing Management",
       image: "/images/image4.jpg",
       backfaceimage: "/images/wellbeing-management-hover.webp",
-      backfacecontent: "Elevating lifestyles through holistic wellbeing management solutions."
+      backfacecontent: "Elevating lifestyles through holistic wellbeing management solutions.",
+      link: "/contact"
     },
   ];
   const router = useRouter();
@@ -61,13 +65,13 @@ function WhatWeDo() {
                       <p>{service.title}</p>
                       <span
                         className="arrow"
-                        onClick={() => router.push("/contact")}
+                        onClick={() => router.push(service.link)}
                       >
                         →
                       </span>
                     </div>
                   </div>
-                  <a aria-label="Learn more about Ongoing Care" className="absolute inset-0 bg-white rounded-[30px] md:rounded-[40px] overflow-hidden flip-card-back" href="/contact/">
+                  <a aria-label="Learn more about Ongoing Care" className="absolute inset-0 bg-white rounded-[30px] md:rounded-[40px] overflow-hidden flip-card-back" href={service.link}>
                     <div className="p-[16px] pl-[16px] pr-[10px] fg-secondary-500">
                       <h4 className="text-[16px] lg:text-[21px] text-left lh-1.2 -ls-0.4 max-w-[200px]">{service.title}</h4>
                       <p className="text-[14px] lg:text-[16px] text-left mt-[10px] lh-1.25 -ls-0.8 fw-400">{service.backfacecontent}</p>
