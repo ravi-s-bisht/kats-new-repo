@@ -3,7 +3,6 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import "./WhatWeDo.css";
 import Image from "next/image";
-import ConnectLines from "../../public/connect-lines.svg";
 
 function WhatWeDo() {
   const services = [

@@ -16,7 +16,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "AvatarX",
-  description: "AvatarX senior companion platform",
+  description: "Unlock next-level patient care with AvatarX Health an AI-powered platform designed to enhance outcomes, reduce readmissions, and cut costs through intelligent monitoring and proactive care solutions. Experience the power of precision-driven healthcare for a healthier tomorrow.",
 };
 
 export default function RootLayout({
