@@ -7,14 +7,14 @@ import Image from "next/image";
 function WhatWeDo() {
   const services = [
     {
-      title: "Remote Patient Monitoring",
+      title: "Chronic Care Management",
       image: "/images/preventive_programs.jpg",
       backfaceimage: "/images/preventative-programs-hover.webp",
       backfacecontent: "Explore how RPM drives better patient outcomes.",
       link: "/chronic-care-management",
     },
     {
-      title: "Chronic Care Management",
+      title: "Remote Patient Monitoring",
       image: "/images/image1.jpg",
       backfaceimage: "/images/continuous-health-monitoring-hover.webp",
       backfacecontent: "See how our innovative, turnkey technology works.",
